@@ -1,0 +1,16 @@
+WAREHOUSE MASTERPRESS — PUBLIKACJA NA GITHUB PAGES
+
+1. Utwórz nowe repozytorium w GitHub.
+2. Prześlij do niego CAŁĄ zawartość folderu Warehouse-Masterpress.
+3. Dopilnuj, aby pliki znalazły się na gałęzi main.
+4. Wejdź w repozytorium: Settings → Pages.
+5. W sekcji Build and deployment ustaw Source: Deploy from a branch.
+6. Wybierz Branch: main oraz folder: /docs i kliknij Save.
+7. Poczekaj kilka minut. Link do aplikacji pojawi się w Settings → Pages.
+
+Folder docs zawiera gotową, zbudowaną aplikację. GitHub nie może publikować
+bezpośrednio plików index.html i pages-main.tsx z głównego folderu.
+
+Przy następnych zmianach podmień wszystkie pliki, łącznie z folderem docs.
+
+Asystent głosowy wymaga aktualnego Chrome lub Edge oraz zgody na mikrofon.
