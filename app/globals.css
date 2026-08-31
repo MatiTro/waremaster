@@ -830,6 +830,138 @@
   }
 }
 
+/* Grafik v3 — wyjątki godzinowe bez utraty zwartego arkusza */
+.schedule-cell-editor-wrap {
+  background: var(--navy);
+  border-bottom: 1px solid #375778;
+}
+.schedule-cell-editor-wrap .schedule-cell-editor {
+  border-bottom: 0;
+}
+.schedule-cell-editor > button.custom {
+  min-width: 118px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 11px;
+  color: white;
+  background: #176f9f;
+  font-size: 8px;
+}
+.schedule-cell-editor > button.custom svg {
+  width: 15px;
+}
+.schedule-custom-hours {
+  display: grid;
+  grid-template-columns: minmax(205px, 1.2fr) 100px 100px minmax(150px, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+  padding: 12px 17px 15px;
+  background: #f2f7fa;
+  border-top: 1px solid #466786;
+}
+.schedule-custom-hours > div {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--navy);
+}
+.schedule-custom-hours > div > svg {
+  width: 24px;
+  color: var(--blue);
+}
+.schedule-custom-hours > div span,
+.schedule-custom-hours > div strong,
+.schedule-custom-hours > div small {
+  display: block;
+}
+.schedule-custom-hours > div strong {
+  font-size: 10px;
+}
+.schedule-custom-hours > div small {
+  max-width: 280px;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 7px;
+  line-height: 1.35;
+}
+.schedule-custom-hours label {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 850;
+}
+.schedule-custom-hours input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 10px;
+  color: var(--navy);
+  background: white;
+  border: 1px solid #c7d5de;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 750;
+}
+.schedule-custom-hours > button {
+  min-height: 44px;
+  white-space: nowrap;
+}
+.schedule-matrix-cell.custom-hours {
+  color: #075b70;
+  background: #dff2f5;
+}
+.schedule-matrix-cell.custom-hours strong {
+  font-size: 9px;
+  letter-spacing: -0.02em;
+}
+.schedule-matrix-legend i.custom-hours {
+  background: #2392a8;
+}
+
+@media (max-width: 980px) {
+  .schedule-custom-hours {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .schedule-custom-hours > div,
+  .schedule-custom-hours label.note {
+    grid-column: 1 / -1;
+  }
+  .schedule-custom-hours > button {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 680px) {
+  .schedule-cell-editor > button.custom {
+    min-width: 105px;
+  }
+  .schedule-custom-hours {
+    grid-template-columns: 1fr 1fr;
+  }
+  .schedule-custom-hours > button {
+    grid-column: 1 / -1;
+  }
+}
+
+@media print {
+  .schedule-print-document.print-active
+    .schedule-print-page
+    td.custom-hours {
+    color: #075b70;
+    background: #e4f3f5 !important;
+    print-color-adjust: exact;
+  }
+  .schedule-print-document.print-active
+    .schedule-print-page
+    td.custom-hours
+    > strong {
+    font-size: 6.4pt;
+  }
+}
+
 * {
   box-sizing: border-box;
 }

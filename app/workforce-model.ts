@@ -8,8 +8,11 @@ export type Employee = {
 
 export type ShiftAssignment = {
   date: string;
-  shift: ShiftId;
+  shift?: ShiftId;
   employeeId: string;
+  fromTime?: string;
+  toTime?: string;
+  note?: string;
 };
 
 export type PlannedLeave = {
@@ -49,6 +52,16 @@ export const workforceStorageKeys = {
 } as const;
 
 export const shifts: ShiftId[] = ["I", "II", "III"];
+
+export function formatWorkHours(
+  fromTime: string,
+  toTime: string,
+  compact = false,
+) {
+  const format = (value: string) =>
+    compact && value.endsWith(":00") ? value.slice(0, 2) : value;
+  return format(fromTime) + "–" + format(toTime);
+}
 
 function utcDate(value: string) {
   const [year, month, day] = value.split("-").map(Number);

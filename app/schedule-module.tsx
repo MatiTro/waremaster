@@ -22,6 +22,7 @@ import {
   employeeInitials,
   formatDate,
   formatMonth,
+  formatWorkHours,
   formatWeekday,
   leaveIncludesDate,
   leaveOverlapsMonth,
@@ -154,6 +155,10 @@ export function ScheduleModule() {
   const [draftShift, setDraftShift] = useState<ShiftId>("I");
   const [draftEmployee, setDraftEmployee] = useState("");
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(null);
+  const [customEditorOpen, setCustomEditorOpen] = useState(false);
+  const [customFrom, setCustomFrom] = useState("10:00");
+  const [customTo, setCustomTo] = useState("18:00");
+  const [customNote, setCustomNote] = useState("");
   const [weekendDate, setWeekendDate] = useState("");
   const [weekendEmployee, setWeekendEmployee] = useState("");
   const [weekendFrom, setWeekendFrom] = useState("08:00");
@@ -430,6 +435,60 @@ export function ScheduleModule() {
           : "wyczyszczono " + formatDate(date) + "."),
       tone: "success",
     });
+    setCustomEditorOpen(false);
+  }
+
+  function selectScheduleCell(date: string, employeeId: string) {
+    const existing = assignments.find((assignment) =>
+      assignment.date === date && assignment.employeeId === employeeId
+    );
+    setSelectedCell({ date, employeeId });
+    setCustomFrom(existing?.fromTime || "10:00");
+    setCustomTo(existing?.toTime || "18:00");
+    setCustomNote(existing?.note || "");
+    setCustomEditorOpen(Boolean(existing?.fromTime && existing?.toTime));
+  }
+
+  function saveCustomHours() {
+    if (!selectedCell) return;
+    const { date, employeeId } = selectedCell;
+    if (
+      leaves.some((leave) =>
+        leave.employeeId === employeeId && leaveIncludesDate(leave, date)
+      )
+    ) {
+      setNotice({
+        message: "Nie można ustawić godzin w dniu zaplanowanego urlopu.",
+        tone: "danger",
+      });
+      return;
+    }
+    if (!customFrom || !customTo || customFrom === customTo) {
+      setNotice({
+        message: "Podaj różne godziny rozpoczęcia i zakończenia pracy.",
+        tone: "danger",
+      });
+      return;
+    }
+    setAssignments((current) => {
+      const retained = current.filter((assignment) =>
+        assignment.date !== date || assignment.employeeId !== employeeId
+      );
+      return [...retained, {
+        date,
+        employeeId,
+        fromTime: customFrom,
+        toTime: customTo,
+        note: customNote.trim(),
+      }];
+    });
+    setNotice({
+      message: employeeName(employees, employeeId) + ": ustawiono " +
+        formatWorkHours(customFrom, customTo) + " na " + formatDate(date) +
+        (customTo < customFrom ? " (zmiana przez północ)." : "."),
+      tone: "success",
+    });
+    setCustomEditorOpen(false);
   }
 
   function openWeekend(date: string, employeeId?: string) {
@@ -548,7 +607,20 @@ export function ScheduleModule() {
     const assignment = assignments.find((item) =>
       item.employeeId === employeeId && item.date === date
     );
-    if (assignment) {
+    if (assignment?.fromTime && assignment.toTime) {
+      return {
+        value: formatWorkHours(
+          assignment.fromTime,
+          assignment.toTime,
+          true,
+        ),
+        detail: "Godziny indywidualne " +
+          formatWorkHours(assignment.fromTime, assignment.toTime) +
+          (assignment.note ? " · " + assignment.note : ""),
+        tone: "custom-hours",
+      };
+    }
+    if (assignment?.shift) {
       return {
         value: shiftNumber[assignment.shift],
         detail: "Zmiana " + shiftNumber[assignment.shift],
@@ -562,6 +634,7 @@ export function ScheduleModule() {
     setSelectedMonth(month);
     setCalendarMonth(month);
     setSelectedCell(null);
+    setCustomEditorOpen(false);
   }
 
   function printSchedule() {
@@ -883,31 +956,85 @@ export function ScheduleModule() {
             </div>
 
             {selectedCell && !isWeekend(selectedCell.date) && (
-              <div className="schedule-cell-editor">
-                <div>
-                  <small>EDYTUJ WPIS</small>
-                  <strong>
-                    {employeeName(employees, selectedCell.employeeId)} ·{" "}
-                    {formatDate(selectedCell.date)}
-                  </strong>
-                </div>
-                <span>Wybierz zmianę:</span>
-                {shifts.map((shift) => (
+              <div className="schedule-cell-editor-wrap">
+                <div className="schedule-cell-editor">
+                  <div>
+                    <small>EDYTUJ WPIS</small>
+                    <strong>
+                      {employeeName(employees, selectedCell.employeeId)} ·{" "}
+                      {formatDate(selectedCell.date)}
+                    </strong>
+                  </div>
+                  <span>Wybierz zmianę:</span>
+                  {shifts.map((shift) => (
+                    <button
+                      key={shift}
+                      onClick={() => setCellShift(shift)}
+                      type="button"
+                    >
+                      {shiftNumber[shift]}
+                    </button>
+                  ))}
                   <button
-                    key={shift}
-                    onClick={() => setCellShift(shift)}
+                    className="custom"
+                    onClick={() => setCustomEditorOpen((current) => !current)}
                     type="button"
                   >
-                    {shiftNumber[shift]}
+                    <Clock3 /> Inne godziny
                   </button>
-                ))}
-                <button
-                  className="clear"
-                  onClick={() => setCellShift(null)}
-                  type="button"
-                >
-                  Wyczyść
-                </button>
+                  <button
+                    className="clear"
+                    onClick={() => setCellShift(null)}
+                    type="button"
+                  >
+                    Wyczyść
+                  </button>
+                </div>
+                {customEditorOpen && (
+                  <div className="schedule-custom-hours">
+                    <div>
+                      <Clock3 />
+                      <span>
+                        <strong>Indywidualne godziny pracy</strong>
+                        <small>
+                          Możesz zapisać także zmianę przez północ, np.
+                          20:00–06:00.
+                        </small>
+                      </span>
+                    </div>
+                    <label>
+                      Od
+                      <input
+                        onChange={(event) => setCustomFrom(event.target.value)}
+                        type="time"
+                        value={customFrom}
+                      />
+                    </label>
+                    <label>
+                      Do
+                      <input
+                        onChange={(event) => setCustomTo(event.target.value)}
+                        type="time"
+                        value={customTo}
+                      />
+                    </label>
+                    <label className="note">
+                      Uwagi
+                      <input
+                        onChange={(event) => setCustomNote(event.target.value)}
+                        placeholder="opcjonalnie"
+                        value={customNote}
+                      />
+                    </label>
+                    <button
+                      className="primary-button"
+                      onClick={saveCustomHours}
+                      type="button"
+                    >
+                      <CheckCircle2 /> Zapisz godziny
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -946,10 +1073,7 @@ export function ScheduleModule() {
                                 onClick={() =>
                                   weekend
                                     ? openWeekend(date, employee.id)
-                                    : setSelectedCell({
-                                      date,
-                                      employeeId: employee.id,
-                                    })}
+                                    : selectScheduleCell(date, employee.id)}
                                 title={mark.detail}
                                 type="button"
                               >
@@ -981,6 +1105,9 @@ export function ScheduleModule() {
               <span><i className="shift-one" /> 1 · pierwsza zmiana</span>
               <span><i className="shift-two" /> 2 · druga zmiana</span>
               <span><i className="shift-three" /> 3 · trzecia zmiana</span>
+              <span>
+                <i className="custom-hours" /> Godziny indywidualne
+              </span>
               <span><i className="leave" /> U · urlop</span>
               <span><i className="weekend-work" /> W · praca weekend</span>
             </div>
@@ -1317,6 +1444,7 @@ export function ScheduleModule() {
             </table>
             <div className="schedule-print-legend">
               <span><b>1 / 2 / 3</b> numer zmiany</span>
+              <span><b>10–18</b> indywidualne godziny</span>
               <span><b>U</b> urlop</span>
               <span><b>W</b> praca weekend</span>
             </div>

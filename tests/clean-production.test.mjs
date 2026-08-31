@@ -79,10 +79,28 @@ test("Grafik ma zwarty arkusz, osobne weekendy i profesjonalny wydruk", () => {
   assert.match(scheduleSource, /schedule-print-document/);
   assert.match(scheduleSource, /schedule-print-page/);
   assert.match(scheduleSource, /printEmployeeGroups/);
+  assert.match(scheduleSource, /Inne godziny/);
+  assert.match(scheduleSource, /schedule-custom-hours/);
+  assert.match(scheduleSource, /customTo < customFrom/);
+  assert.match(scheduleSource, /formatWorkHours/);
   assert.match(globalStyles, /@page workforce-landscape/);
   assert.match(globalStyles, /size: A4 landscape/);
   assert.match(globalStyles, /workforce-module > \*:not\(\.schedule-print-document\)/);
   assert.match(globalStyles, /schedule-print-page tbody tr\.weekend/);
+  assert.match(globalStyles, /schedule-matrix-cell\.custom-hours/);
+});
+
+test("Dostawy mają tylko dostawcę i liczbę palet, a konfiguracja znika z menu", () => {
+  assert.equal(pageSource.includes('label: "Konfiguracja"'), false);
+  const deliveryForm = pageSource.slice(
+    pageSource.indexOf('className="modal delivery-modal"'),
+    pageSource.indexOf("{deliveryToDelete &&"),
+  );
+  assert.match(deliveryForm, /name="supplier"/);
+  assert.match(deliveryForm, /name="pallets"/);
+  assert.equal(deliveryForm.includes('name="warehouse"'), false);
+  assert.equal(deliveryForm.includes('name="date"'), false);
+  assert.equal(deliveryForm.includes('name="notes"'), false);
 });
 
 test("Karta mycia obsługuje trzy formularze, oba magazyny i eksport Word", () => {

@@ -394,12 +394,6 @@ const navItems: {
     icon: Droplets,
   },
   {
-    id: "suppliers",
-    label: "Konfiguracja",
-    description: "Dostawcy i surowce",
-    icon: Settings,
-  },
-  {
     id: "barcodes",
     label: "Kody kreskowe",
     description: "Ładunki i lokalizacje",
@@ -549,9 +543,12 @@ export default function Home() {
   const todayPallets = deliveries
     .filter((delivery) => delivery.date === isoDate())
     .reduce((sum, delivery) => sum + delivery.pallets, 0);
-  const suppliers = supplierCatalog
-    .filter((supplier) => supplier.active)
-    .map((supplier) => supplier.name);
+  const suppliers = Array.from(new Set([
+    ...supplierCatalog
+      .filter((supplier) => supplier.active)
+      .map((supplier) => supplier.name),
+    ...deliveries.map((delivery) => delivery.supplier),
+  ])).sort((a, b) => a.localeCompare(b, "pl"));
   const filteredSuppliers = supplierCatalog.filter((supplier) =>
     [supplier.name, supplier.material]
       .join(" ")
@@ -647,9 +644,6 @@ export default function Home() {
     [
       delivery.id,
       delivery.supplier,
-      delivery.material,
-      warehouseNames[delivery.warehouse],
-      delivery.notes,
     ]
       .join(" ")
       .toLocaleLowerCase("pl")
@@ -2116,18 +2110,16 @@ export default function Home() {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const supplier = String(form.get("supplier")).trim();
-    const mappedMaterial = supplierCatalog.find(
-      (item) =>
-        item.active &&
-        item.name.toLocaleLowerCase("pl") === supplier.toLocaleLowerCase("pl"),
-    )?.material;
+    const previous = editingDelivery
+      ? deliveries.find((delivery) => delivery.id === editingDelivery)
+      : undefined;
     const payload = {
       supplier,
       pallets: Math.max(1, Number(form.get("pallets")) || 1),
-      material: mappedMaterial || ("Inne" as MaterialName),
-      warehouse: (form.get("warehouse") === "B" ? "B" : "A") as WarehouseKey,
-      notes: String(form.get("notes") || ""),
-      date: String(form.get("date") || isoDate()),
+      material: previous?.material || ("Inne" as MaterialName),
+      warehouse: previous?.warehouse || ("A" as WarehouseKey),
+      notes: previous?.notes || "",
+      date: previous?.date || isoDate(),
     };
 
     if (editingDelivery) {
@@ -2145,7 +2137,8 @@ export default function Home() {
         { ...payload, id },
         ...current,
       ]);
-      setToast(`Dostawa ${id} zapisana w niezależnym rejestrze.`);
+      setToast("Dostawa " + id + " zapisana: " + supplier + ", " +
+        payload.pallets + " palet.");
     }
     setEditingDelivery(null);
     setDeliveryModal(false);
@@ -3278,8 +3271,8 @@ export default function Home() {
                 <span>NIEZALEŻNY REJESTR</span>
                 <h2>Dostawy i statystyki</h2>
                 <p>
-                  Moduł działa niezależnie od D365 i pozostałych części
-                  aplikacji. Służy wyłącznie do rejestracji i raportów.
+                  Wpisz dostawcę i liczbę palet. Data rejestracji uzupełni się
+                  automatycznie, a raport miesięczny podsumuje dostawy.
                 </p>
               </div>
               <button
@@ -3417,10 +3410,8 @@ export default function Home() {
                           <span>{delivery.id}</span>
                         </div>
                         <p>
-                          {delivery.pallets} palet · {delivery.material} · {" "}
-                          {warehouseNames[delivery.warehouse]}
+                          {delivery.pallets} palet
                         </p>
-                        {delivery.notes && <small>{delivery.notes}</small>}
                       </div>
                     </div>
                     <time>{formatDeliveryDate(delivery.date)}</time>
@@ -4057,7 +4048,7 @@ export default function Home() {
                     : "Nowa dostawa"}
                 </h2>
                 <p>
-                  Krótki formularz przygotowany również do obsługi na telefonie.
+                  Wprowadź wyłącznie dostawcę i liczbę przyjętych palet.
                 </p>
               </div>
               <button
@@ -4093,41 +4084,6 @@ export default function Home() {
                   placeholder="0"
                   required
                   type="number"
-                />
-              </label>
-              <div className="form-row">
-                <label>
-                  Data dostawy
-                  <input
-                    defaultValue={edited?.date || isoDate()}
-                    name="date"
-                    required
-                    type="date"
-                  />
-                </label>
-                <label>
-                  Magazyn
-                  <select defaultValue={edited?.warehouse || "A"} name="warehouse">
-                    <option value="A">Magazyn główny</option>
-                    <option value="B">Nowy magazyn</option>
-                  </select>
-                  <ChevronDown />
-                </label>
-              </div>
-              <div className="delivery-material-note">
-                <Sparkles />
-                <span>
-                  Rodzaj surowca zostanie przypisany automatycznie według
-                  aktywnej reguły dostawcy.
-                </span>
-              </div>
-              <label>
-                Uwagi
-                <textarea
-                  defaultValue={edited?.notes}
-                  name="notes"
-                  placeholder="Opcjonalne uwagi, numer rampy, godzina..."
-                  rows={3}
                 />
               </label>
               <div className="modal-actions">
@@ -4434,8 +4390,6 @@ export default function Home() {
                     <tr>
                       <th>Numer</th>
                       <th>Dostawca</th>
-                      <th>Surowiec</th>
-                      <th>Magazyn</th>
                       <th>Palety</th>
                       <th>Termin</th>
                     </tr>
@@ -4447,8 +4401,6 @@ export default function Home() {
                           <strong>{delivery.id}</strong>
                         </td>
                         <td>{delivery.supplier}</td>
-                        <td>{delivery.material}</td>
-                        <td>{warehouseNames[delivery.warehouse]}</td>
                         <td>{delivery.pallets}</td>
                         <td>{formatDeliveryDate(delivery.date)}</td>
                       </tr>
