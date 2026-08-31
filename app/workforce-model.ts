@@ -39,6 +39,58 @@ export const workforceStorageKeys = {
 } as const;
 
 export const shifts: ShiftId[] = ["I", "II", "III"];
+export const rotationShifts: ShiftId[] = ["I", "III", "II"];
+
+function utcDate(value: string) {
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function utcIsoDate(date: Date) {
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
+}
+
+function isoWeekMonday(value: string) {
+  const date = utcDate(value);
+  if (!date) return null;
+  const weekday = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() - weekday + 1);
+  return date;
+}
+
+export function dateRange(from: string, to: string) {
+  const start = utcDate(from);
+  const end = utcDate(to);
+  if (!start || !end || start > end) return [];
+  const dates: string[] = [];
+  for (const date = new Date(start); date <= end; date.setUTCDate(date.getUTCDate() + 1)) {
+    dates.push(utcIsoDate(date));
+  }
+  return dates;
+}
+
+export function isWeekend(value: string) {
+  const date = utcDate(value);
+  return date ? [0, 6].includes(date.getUTCDay()) : false;
+}
+
+export function rotationShiftForDate(
+  startDate: string,
+  date: string,
+  firstShift: ShiftId,
+) {
+  const startMonday = isoWeekMonday(startDate);
+  const dateMonday = isoWeekMonday(date);
+  const startIndex = rotationShifts.indexOf(firstShift);
+  if (!startMonday || !dateMonday || startIndex < 0) return firstShift;
+  const weekOffset = Math.floor(
+    (dateMonday.getTime() - startMonday.getTime()) / (7 * 86_400_000),
+  );
+  const normalizedOffset = ((weekOffset % rotationShifts.length) + rotationShifts.length) % rotationShifts.length;
+  return rotationShifts[(startIndex + normalizedOffset) % rotationShifts.length];
+}
 
 function localDate(value: string) {
   return new Date(`${value}T12:00:00`);

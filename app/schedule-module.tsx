@@ -15,15 +15,18 @@ import {
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   currentMonthKey,
+  dateRange,
   employeeInitials,
   formatDate,
   formatMonth,
   formatWeekday,
   leaveIncludesDate,
   leaveOverlapsMonth,
+  isWeekend,
   localIsoDate,
   makeRecordId,
   monthDates,
+  rotationShiftForDate,
   safeReadArray,
   shifts,
   workforceStorageKeys,
@@ -34,6 +37,8 @@ import {
 } from "./workforce-model";
 
 type ScheduleTab = "planner" | "employees" | "leaves";
+type NoticeTone = "success" | "warning" | "danger";
+type ModuleNotice = { message: string; tone: NoticeTone };
 
 function employeeName(employees: Employee[], id: string) {
   return employees.find((employee) => employee.id === id)?.name ||
@@ -123,10 +128,13 @@ export function ScheduleModule() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [assignments, setAssignments] = useState<ShiftAssignment[]>([]);
   const [leaves, setLeaves] = useState<PlannedLeave[]>([]);
-  const [draftDate, setDraftDate] = useState(localIsoDate());
+  const [draftFrom, setDraftFrom] = useState(localIsoDate());
+  const [draftTo, setDraftTo] = useState(localIsoDate());
   const [draftShift, setDraftShift] = useState<ShiftId>("I");
   const [draftEmployee, setDraftEmployee] = useState("");
-  const [notice, setNotice] = useState<string | null>(null);
+  const [automaticRotation, setAutomaticRotation] = useState(true);
+  const [includeWeekends, setIncludeWeekends] = useState(false);
+  const [notice, setNotice] = useState<ModuleNotice | null>(null);
   const [printActive, setPrintActive] = useState(false);
 
   useEffect(() => {
@@ -188,7 +196,7 @@ export function ScheduleModule() {
           date,
           shift,
           count: assigned.length,
-          tone: assigned.length === 3 ? "good" : "warning",
+          tone: "danger",
         } as const];
       }),
     );
@@ -214,14 +222,14 @@ export function ScheduleModule() {
           name.toLocaleLowerCase("pl"),
       )
     ) {
-      setNotice("Taki pracownik znajduje się już na liście.");
+      setNotice({ message: "Taki pracownik znajduje się już na liście.", tone: "danger" });
       return;
     }
     const employee = { id: makeRecordId("EMP"), name, active: true };
     setEmployees((current) => [...current, employee]);
     if (!draftEmployee) setDraftEmployee(employee.id);
     event.currentTarget.reset();
-    setNotice(`Dodano pracownika: ${name}.`);
+    setNotice({ message: `Dodano pracownika: ${name}.`, tone: "success" });
   }
 
   function toggleEmployee(id: string) {
@@ -239,9 +247,10 @@ export function ScheduleModule() {
       assignments.some((assignment) => assignment.employeeId === id) ||
       leaves.some((leave) => leave.employeeId === id)
     ) {
-      setNotice(
-        "Pracownik ma zapisany grafik lub urlop. Najpierw usuń powiązane wpisy albo ustaw go jako nieaktywnego.",
-      );
+      setNotice({
+        message: "Pracownik ma zapisany grafik lub urlop. Najpierw usuń powiązane wpisy albo ustaw go jako nieaktywnego.",
+        tone: "danger",
+      });
       return;
     }
     setEmployees((current) => current.filter((employee) => employee.id !== id));
@@ -250,45 +259,57 @@ export function ScheduleModule() {
   function addAssignment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!draftEmployee) {
-      setNotice("Najpierw dodaj pracownika i wybierz go z listy.");
+      setNotice({ message: "Najpierw dodaj pracownika i wybierz go z listy.", tone: "danger" });
       return;
     }
-    if (
-      leaves.some(
-        (leave) =>
-          leave.employeeId === draftEmployee &&
-          leaveIncludesDate(leave, draftDate),
-      )
-    ) {
-      setNotice("Ta osoba ma w wybranym dniu zaplanowany urlop.");
+    if (draftFrom > draftTo) {
+      setNotice({ message: "Data „do” nie może być wcześniejsza niż data „od”.", tone: "danger" });
       return;
     }
-    if (
-      assignments.some(
-        (assignment) =>
-          assignment.date === draftDate &&
-          assignment.employeeId === draftEmployee,
-      )
-    ) {
-      setNotice("Ta osoba jest już przypisana do zmiany w wybranym dniu.");
-      return;
-    }
-    const next = [
-      ...assignments,
-      { date: draftDate, shift: draftShift, employeeId: draftEmployee },
-    ];
-    setAssignments(next);
-    const count = next.filter(
-      (assignment) =>
-        assignment.date === draftDate && assignment.shift === draftShift,
-    ).length;
-    setNotice(
-      count === 3
-        ? `Pełna obsada: na ${draftShift} zmianie są teraz 3 osoby.`
-        : count > 3
-          ? `Uwaga: na ${draftShift} zmianie są już ${count} osoby.`
-          : "Pracownik został dodany do grafiku.",
+    const requestedDates = dateRange(draftFrom, draftTo).filter(
+      (date) => includeWeekends || !isWeekend(date),
     );
+    if (requestedDates.length === 0) {
+      setNotice({ message: "W wybranym zakresie nie ma dni do uzupełnienia.", tone: "danger" });
+      return;
+    }
+
+    let skippedLeave = 0;
+    let skippedExisting = 0;
+    const added: ShiftAssignment[] = [];
+    for (const date of requestedDates) {
+      if (leaves.some((leave) => leave.employeeId === draftEmployee && leaveIncludesDate(leave, date))) {
+        skippedLeave += 1;
+        continue;
+      }
+      if (assignments.some((assignment) => assignment.date === date && assignment.employeeId === draftEmployee)) {
+        skippedExisting += 1;
+        continue;
+      }
+      added.push({
+        date,
+        shift: automaticRotation
+          ? rotationShiftForDate(draftFrom, date, draftShift)
+          : draftShift,
+        employeeId: draftEmployee,
+      });
+    }
+
+    const next = [...assignments, ...added];
+    setAssignments(next);
+    setSelectedMonth(draftFrom.slice(0, 7));
+    const crowded = added.filter((entry) =>
+      next.filter((assignment) => assignment.date === entry.date && assignment.shift === entry.shift).length >= 3
+    ).length;
+    const details = [
+      skippedLeave ? `${skippedLeave} dni pominięto z powodu urlopu` : "",
+      skippedExisting ? `${skippedExisting} dni było już przypisanych` : "",
+      crowded ? `${crowded} zmian osiągnęło obsadę co najmniej 3 osób` : "",
+    ].filter(Boolean);
+    setNotice({
+      message: `Dodano ${added.length} ${added.length === 1 ? "wpis" : "wpisów"}${details.length ? `. Uwaga: ${details.join(", ")}.` : "."}`,
+      tone: skippedLeave > 0 || crowded > 0 ? "danger" : skippedExisting > 0 ? "warning" : "success",
+    });
   }
 
   function removeAssignment(assignment: ShiftAssignment) {
@@ -313,7 +334,7 @@ export function ScheduleModule() {
     const note = String(form.get("leaveNote") || "").trim();
     if (!employeeId || !from || !to) return;
     if (from > to) {
-      setNotice("Data zakończenia urlopu nie może być wcześniejsza od rozpoczęcia.");
+      setNotice({ message: "Data zakończenia urlopu nie może być wcześniejsza od rozpoczęcia.", tone: "danger" });
       return;
     }
     setLeaves((current) => [
@@ -327,15 +348,17 @@ export function ScheduleModule() {
         assignment.date <= to,
     ).length;
     event.currentTarget.reset();
-    setNotice(
-      collisions > 0
+    setNotice({
+      message: collisions > 0
         ? `Urlop zapisany. Uwaga: koliduje z ${collisions} wpisami w grafiku.`
         : "Zaplanowany urlop został zapisany.",
-    );
+      tone: collisions > 0 ? "danger" : "success",
+    });
   }
 
   function prepareAssignment(date: string, shift: ShiftId) {
-    setDraftDate(date);
+    setDraftFrom(date);
+    setDraftTo(date);
     setDraftShift(shift);
     setTab("planner");
     document.getElementById("schedule-quick-add")?.scrollIntoView({
@@ -365,8 +388,8 @@ export function ScheduleModule() {
       </section>
 
       {notice && (
-        <div aria-live="polite" className="module-notice" role="status">
-          <CheckCircle2 /> <span>{notice}</span>
+        <div aria-live="polite" className={`module-notice ${notice.tone}`} role="status">
+          {notice.tone === "success" ? <CheckCircle2 /> : <AlertTriangle />} <span>{notice.message}</span>
         </div>
       )}
 
@@ -400,7 +423,8 @@ export function ScheduleModule() {
             <input
               onChange={(event) => {
                 setSelectedMonth(event.target.value);
-                setDraftDate(`${event.target.value}-01`);
+                setDraftFrom(`${event.target.value}-01`);
+                setDraftTo(monthDates(event.target.value).at(-1) || `${event.target.value}-01`);
               }}
               type="month"
               value={selectedMonth}
@@ -409,7 +433,7 @@ export function ScheduleModule() {
         </div>
         <div className="alert-feed">
           {monthlyLeaves.length > 0 ? monthlyLeaves.map((leave) => (
-            <div className="alert-feed-item leave" key={leave.id}>
+            <div className="alert-feed-item leave danger" key={leave.id}>
               <Umbrella />
               <p>
                 <strong>{employeeName(employees, leave.employeeId)}</strong> — urlop
@@ -427,7 +451,7 @@ export function ScheduleModule() {
               className={`alert-feed-item ${warning.tone}`}
               key={`${warning.date}-${warning.shift}`}
             >
-              {warning.tone === "good" ? <CheckCircle2 /> : <AlertTriangle />}
+              <AlertTriangle />
               <p>
                 <strong>{formatDate(warning.date)} · {warning.shift} zmiana</strong>
                 {" "}— przypisano {warning.count} osoby.
@@ -453,15 +477,19 @@ export function ScheduleModule() {
         <>
           <form className="panel schedule-quick-add" id="schedule-quick-add" onSubmit={addAssignment}>
             <div>
-              <span>SZYBKIE PRZYPISANIE</span>
-              <h3>Dodaj osobę do zmiany</h3>
+              <span>UZUPEŁNIANIE ZAKRESU</span>
+              <h3>Ustaw grafik od–do</h3>
             </div>
             <label>
-              Data
-              <input onChange={(event) => setDraftDate(event.target.value)} required type="date" value={draftDate} />
+              Od
+              <input onChange={(event) => setDraftFrom(event.target.value)} required type="date" value={draftFrom} />
             </label>
             <label>
-              Zmiana
+              Do
+              <input onChange={(event) => setDraftTo(event.target.value)} required type="date" value={draftTo} />
+            </label>
+            <label>
+              {automaticRotation ? "Zmiana początkowa" : "Zmiana"}
               <select onChange={(event) => setDraftShift(event.target.value as ShiftId)} value={draftShift}>
                 {shifts.map((shift) => <option key={shift} value={shift}>{shift} zmiana</option>)}
               </select>
@@ -473,7 +501,17 @@ export function ScheduleModule() {
                 {activeEmployees.map((employee) => <option key={employee.id} value={employee.id}>{employee.name}</option>)}
               </select>
             </label>
-            <button className="primary-button" type="submit"><Plus /> Dodaj</button>
+            <div className="schedule-automation-options">
+              <label className="schedule-checkbox">
+                <input checked={automaticRotation} onChange={(event) => setAutomaticRotation(event.target.checked)} type="checkbox" />
+                <span><strong>Automat rotacji</strong><small>I → III → II, zmiana co tydzień</small></span>
+              </label>
+              <label className="schedule-checkbox compact">
+                <input checked={includeWeekends} onChange={(event) => setIncludeWeekends(event.target.checked)} type="checkbox" />
+                <span><strong>Uwzględnij weekendy</strong></span>
+              </label>
+            </div>
+            <button className="primary-button" type="submit"><Plus /> Uzupełnij zakres</button>
           </form>
 
           <section className="panel schedule-board">
@@ -488,8 +526,7 @@ export function ScheduleModule() {
               <table className="schedule-table">
                 <thead>
                   <tr>
-                    <th>Data</th>
-                    <th>Dzień</th>
+                    <th>Data / dzień</th>
                     {shifts.map((shift) => <th key={shift}>{shift} zmiana</th>)}
                     <th>Nieobecności</th>
                   </tr>
@@ -500,8 +537,7 @@ export function ScheduleModule() {
                     const dayLeaves = leaves.filter((leave) => leaveIncludesDate(leave, date));
                     return (
                       <tr className={weekend ? "weekend" : ""} key={date}>
-                        <td><strong>{formatDate(date, false)}</strong></td>
-                        <td>{formatWeekday(date, true)}</td>
+                        <td className="schedule-date-cell"><strong>{formatDate(date, false)}</strong><small>{formatWeekday(date, true)}</small></td>
                         {shifts.map((shift) => {
                           const cellAssignments = assignments.filter(
                             (assignment) => assignment.date === date && assignment.shift === shift,
@@ -511,8 +547,7 @@ export function ScheduleModule() {
                               <div className={`shift-cell ${cellAssignments.length >= 3 ? "full" : ""}`}>
                                 {cellAssignments.map((assignment) => (
                                   <span className="employee-chip" key={assignment.employeeId}>
-                                    <i>{employeeInitials(employeeName(employees, assignment.employeeId))}</i>
-                                    {employeeName(employees, assignment.employeeId)}
+                                    <span>{employeeName(employees, assignment.employeeId)}</span>
                                     <button aria-label={`Usuń ${employeeName(employees, assignment.employeeId)} z grafiku`} onClick={() => removeAssignment(assignment)} type="button"><X /></button>
                                   </span>
                                 ))}
@@ -608,16 +643,15 @@ export function ScheduleModule() {
           <aside><small>Wygenerowano</small><strong>{formatDate(localIsoDate())}</strong></aside>
         </header>
         <table>
-          <thead><tr><th>Data</th><th>Dzień</th>{shifts.map((shift) => <th key={shift}>{shift} zmiana</th>)}<th>Urlop</th></tr></thead>
+          <thead><tr><th>Data / dzień</th>{shifts.map((shift) => <th key={shift}>{shift} zmiana</th>)}<th>Urlop</th></tr></thead>
           <tbody>
             {dates.map((date) => (
               <tr key={date}>
-                <td>{formatDate(date, false)}</td>
-                <td>{formatWeekday(date, true)}</td>
+                <td><strong>{formatDate(date, false)}</strong><small>{formatWeekday(date, true)}</small></td>
                 {shifts.map((shift) => (
-                  <td key={shift}>{assignments.filter((item) => item.date === date && item.shift === shift).map((item) => employeeName(employees, item.employeeId)).join(", ") || "—"}</td>
+                  <td key={shift}><div className="schedule-print-name-list">{assignments.filter((item) => item.date === date && item.shift === shift).map((item) => <span key={item.employeeId}>{employeeName(employees, item.employeeId)}</span>)}{assignments.every((item) => item.date !== date || item.shift !== shift) && <span>—</span>}</div></td>
                 ))}
-                <td>{leaves.filter((leave) => leaveIncludesDate(leave, date)).map((leave) => employeeName(employees, leave.employeeId)).join(", ") || "—"}</td>
+                <td><div className="schedule-print-name-list">{leaves.filter((leave) => leaveIncludesDate(leave, date)).map((leave) => <span key={leave.id}>{employeeName(employees, leave.employeeId)}</span>)}{leaves.every((leave) => !leaveIncludesDate(leave, date)) && <span>—</span>}</div></td>
               </tr>
             ))}
           </tbody>

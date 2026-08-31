@@ -54,6 +54,10 @@ włączoną na komputerach firmowych. Zatrzymanie aplikacji: `Ctrl+C`.
 - Rejestr dostaw i kartoteka dostawców są zachowywane lokalnie w przeglądarce.
 - Lista pracowników, grafik, urlopy i odpowiedzialność za sprzątanie są również
   zachowywane lokalnie do czasu podłączenia wspólnej bazy danych.
+- Grafik pozwala przypisać pracownika do całego zakresu dat. Opcjonalny automat
+  zmienia zmianę co tydzień według kolejności I, III, II i pomija urlopy.
+- Alerty urlopowe oraz obsada co najmniej trzech osób są oznaczone na czerwono.
+- Wydruk grafiku ma układ poziomy, a nazwiska na zmianie są ustawione pionowo.
 - Karta mycia obsługuje formularze F-02a, F-02b i F-02c dla magazynu surowców
   oraz magazynu wyrobów gotowych. Dokument Word zawiera aktualne logo firmy.
 - Dane lokalne nie są współdzielone między urządzeniami. Wspólny zapis zapewni

@@ -65,10 +65,13 @@ ZAPIS DANYCH
 GRAFIK I KARTA MYCIA
 
 - W module Grafik najpierw dodaj pracowników, następnie przypisuj ich do zmian.
+- Zakres „Od–Do” uzupełnia wiele dni jednocześnie. Checkbox „Automat rotacji”
+  ustawia kolejne tygodnie według schematu I → III → II.
+- Weekendy są domyślnie pomijane; można je włączyć osobnym checkboxem.
 - Urlop automatycznie blokuje przypisanie tej osoby w wybranym dniu.
-- Przy trzech osobach na zmianie aplikacja wyświetla komunikat o pełnej obsadzie.
+- Urlopy i zmiany z obsadą co najmniej trzech osób są oznaczone na czerwono.
 - Przycisk "Drukuj / zapisz PDF" otwiera systemowe okno druku; wybierz drukarkę
-  "Microsoft Print to PDF" albo "Zapisz jako PDF".
+  "Microsoft Print to PDF" albo "Zapisz jako PDF". Grafik drukuje się poziomo.
 - Karta mycia tworzy formularze Word i PDF z aktualnym logo Masterpress.
 
 VIKI automatycznie wybiera głos Zofia, jeżeli jest zainstalowany w systemie.

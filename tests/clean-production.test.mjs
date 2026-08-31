@@ -22,6 +22,10 @@ const cleaningWordSource = await readFile(
   new URL("../app/cleaning-word-export.ts", import.meta.url),
   "utf8",
 );
+const globalStyles = await readFile(
+  new URL("../app/globals.css", import.meta.url),
+  "utf8",
+);
 
 test("wersja produkcyjna nie zawiera startowych rekordów", () => {
   assert.match(pageSource, /const initialDeliveries: Delivery\[\] = \[\];/);
@@ -62,9 +66,16 @@ test("VIKI jest małym modułem głosowym bez okna czatu i podpowiedzi", () => {
 test("Grafik korzysta z pustej listy pracowników i pilnuje obsady oraz urlopów", () => {
   assert.match(pageSource, /id: "schedule"/);
   assert.match(scheduleSource, /safeReadArray<Employee>/);
-  assert.match(scheduleSource, /Pełna obsada: na \$\{draftShift\} zmianie są teraz 3 osoby/);
-  assert.match(scheduleSource, /Ta osoba ma w wybranym dniu zaplanowany urlop/);
+  assert.match(scheduleSource, /rotationShiftForDate/);
+  assert.match(scheduleSource, /Automat rotacji/);
+  assert.match(scheduleSource, /Uwzględnij weekendy/);
+  assert.match(scheduleSource, /pominięto z powodu urlopu/);
+  assert.match(scheduleSource, /tone: "danger"/);
   assert.match(scheduleSource, /schedule-print-document/);
+  assert.match(scheduleSource, /schedule-print-name-list/);
+  assert.match(globalStyles, /@page workforce-landscape/);
+  assert.match(globalStyles, /size: A4 landscape/);
+  assert.match(globalStyles, /workforce-module > \*:not\(\.schedule-print-document\)/);
 });
 
 test("Karta mycia obsługuje trzy formularze, oba magazyny i eksport Word", () => {
