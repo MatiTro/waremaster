@@ -1,16 +1,27 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Warehouse Masterpress",
-  description: "Centrum operacyjne magazynu Masterpress.",
-  other: {
-    "codex-preview": "development",
+  applicationName: "Warehouse Masterpress",
+  description: "Operacyjny system magazynowy Masterpress.",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Warehouse",
   },
   icons: {
     icon: "/masterpress-mark.png",
     shortcut: "/masterpress-mark.png",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#002855",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

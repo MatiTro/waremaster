@@ -1,0 +1,19 @@
+{
+  "name": "Warehouse Masterpress",
+  "short_name": "Warehouse",
+  "description": "Operacyjny system magazynowy Masterpress",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f6f8",
+  "theme_color": "#002855",
+  "orientation": "any",
+  "lang": "pl",
+  "icons": [
+    {
+      "src": "/masterpress-mark.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

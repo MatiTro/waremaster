@@ -1,0 +1,79 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+const pageSource = await readFile(
+  new URL("../app/page.tsx", import.meta.url),
+  "utf8",
+);
+const modelSource = await readFile(
+  new URL("../app/warehouse-model.ts", import.meta.url),
+  "utf8",
+);
+const scheduleSource = await readFile(
+  new URL("../app/schedule-module.tsx", import.meta.url),
+  "utf8",
+);
+const cleaningSource = await readFile(
+  new URL("../app/cleaning-module.tsx", import.meta.url),
+  "utf8",
+);
+const cleaningWordSource = await readFile(
+  new URL("../app/cleaning-word-export.ts", import.meta.url),
+  "utf8",
+);
+
+test("wersja produkcyjna nie zawiera startowych rekordów", () => {
+  assert.match(pageSource, /const initialDeliveries: Delivery\[\] = \[\];/);
+  assert.match(pageSource, /const initialSupplierCatalog: SupplierEntry\[\] = \[\];/);
+  assert.match(pageSource, /const placementRules: PlacementRule\[\] = \[\];/);
+});
+
+test("wersja produkcyjna nie generuje fikcyjnych ładunków ani zajętości", () => {
+  for (const forbidden of [
+    "LD-000847",
+    "PO-004923",
+    "D-0251",
+    "Rampa 2",
+    "knownLocalResult",
+  ]) {
+    assert.equal(pageSource.includes(forbidden), false, forbidden);
+  }
+  assert.equal(modelSource.includes("const seed ="), false);
+  assert.match(modelSource, /export const inventoryDataAvailable = false;/);
+});
+
+test("VIKI jest małym modułem głosowym bez okna czatu i podpowiedzi", () => {
+  for (const forbidden of [
+    'className="voice-assistant-panel"',
+    'className="voice-result"',
+    'className="voice-examples"',
+    "PRZYKŁADOWE POLECENIA",
+    "voiceTranscript",
+    "voiceAnswer",
+  ]) {
+    assert.equal(pageSource.includes(forbidden), false, forbidden);
+  }
+  assert.match(pageSource, /aria-pressed=\{wakeMode\}/);
+  assert.match(pageSource, /<span>VIKI<\/span>/);
+  assert.match(pageSource, /onClick=\{wakeMode \? stopWakeMode : startWakeMode\}/);
+});
+
+test("Grafik korzysta z pustej listy pracowników i pilnuje obsady oraz urlopów", () => {
+  assert.match(pageSource, /id: "schedule"/);
+  assert.match(scheduleSource, /safeReadArray<Employee>/);
+  assert.match(scheduleSource, /Pełna obsada: na \$\{draftShift\} zmianie są teraz 3 osoby/);
+  assert.match(scheduleSource, /Ta osoba ma w wybranym dniu zaplanowany urlop/);
+  assert.match(scheduleSource, /schedule-print-document/);
+});
+
+test("Karta mycia obsługuje trzy formularze, oba magazyny i eksport Word", () => {
+  assert.match(pageSource, /id: "cleaning"/);
+  assert.match(cleaningSource, /F-02a\/P-H-03/);
+  assert.match(cleaningSource, /F-02b\/P-H-03/);
+  assert.match(cleaningSource, /F-02c\/P-H-03/);
+  assert.match(cleaningSource, /Magazyn surowców/);
+  assert.match(cleaningSource, /Magazyn wyrobów gotowych/);
+  assert.match(cleaningWordSource, /masterpress-logo-dark\.png/);
+  assert.match(cleaningWordSource, /Packer\.toBlob/);
+});

@@ -1,0 +1,97 @@
+WAREHOUSE MASTERPRESS — URUCHOMIENIE LOKALNE
+
+WYMAGANE
+
+- Windows 10 lub 11
+- Node.js minimum 22.13 (zalecany Node.js 22 LTS albo 24 LTS)
+
+NAJPROSTSZE URUCHOMIENIE
+
+1. Rozpakuj caly ZIP do zwyklego folderu, np. C:\Warehouse-Masterpress.
+2. Nie uruchamiaj aplikacji bezposrednio z podgladu pliku ZIP.
+3. Kliknij dwukrotnie URUCHOM_WAREHOUSE.bat.
+4. Przy pierwszym starcie zaczekaj na instalacje skladnikow.
+5. Przegladarka otworzy automatycznie http://localhost:5173.
+6. Czarne okno musi pozostac otwarte podczas pracy aplikacji.
+
+KOLEJNE URUCHOMIENIA
+
+Ponownie kliknij URUCHOM_WAREHOUSE.bat. Instalacja nie bedzie wykonywana drugi raz.
+
+URUCHOMIENIE RECZNE
+
+1. Otworz folder Warehouse-Masterpress.
+2. Kliknij pasek adresu folderu, wpisz cmd i nacisnij Enter.
+3. Wpisz kolejno:
+
+   npm.cmd ci --no-audit --no-fund
+   npm.cmd run dev:local
+
+4. Otworz http://localhost:5173.
+
+JESLI NIE DZIALA
+
+- Wpisz w cmd: node -v
+- Wynik musi byc co najmniej v22.13.0.
+- Jezeli widzisz v20.x, zainstaluj nowszy Node.js i uruchom komputer ponownie.
+- Nie zamykaj czarnego okna po uruchomieniu aplikacji.
+- Gdy pojawi sie blad, zrob zdjecie jego ostatnich wierszy — okno nie zamknie sie samo.
+
+Projekt działa lokalnie i nie wymaga publikowania na GitHub Pages.
+
+TEST VIKI
+
+1. Otwórz aplikację w aktualnym Chrome albo Edge i zezwól na mikrofon.
+2. Kliknij mały przycisk „VIKI” w prawym dolnym rogu. Zielona kropka oznacza czuwanie.
+3. Powiedz samo „VIKI” i poczekaj na krótkie „Słucham”.
+4. Wypowiedz całe polecenie, np. „Opowiedz o M2 regał 11”.
+5. Ponowne kliknięcie przycisku wyłącza czuwanie.
+
+VIKI nie otwiera okna, nie pokazuje transkrypcji ani podpowiedzi i odpowiada wyłącznie
+głosem. Pełna lista rozpoznawanych tematów znajduje się w pliku SLOWNIK_VIKI.md.
+
+Wersja startuje bez zapasów i reguł demonstracyjnych. Do czasu integracji VIKI
+nie wskazuje wolnych miejsc i nie doradza odłożenia palet, ponieważ nie ma jeszcze
+rzeczywistych danych o zajętości, dostawcach, surowcach i maksymalnej masie.
+Tryb czuwania działa, gdy aplikacja jest otwarta i ekran tabletu pozostaje aktywny.
+
+ZAPIS DANYCH
+
+- Dostawy i kartoteka dostawców nie znikają po odświeżeniu strony.
+- To samo dotyczy listy pracowników, grafiku, urlopów i planu sprzątania.
+- Do czasu podłączenia bazy zapis jest lokalny dla danej przeglądarki.
+- Uruchomienie produkcyjne na serwerze opisano w pliku PRODUKCJA.md.
+
+GRAFIK I KARTA MYCIA
+
+- W module Grafik najpierw dodaj pracowników, następnie przypisuj ich do zmian.
+- Urlop automatycznie blokuje przypisanie tej osoby w wybranym dniu.
+- Przy trzech osobach na zmianie aplikacja wyświetla komunikat o pełnej obsadzie.
+- Przycisk "Drukuj / zapisz PDF" otwiera systemowe okno druku; wybierz drukarkę
+  "Microsoft Print to PDF" albo "Zapisz jako PDF".
+- Karta mycia tworzy formularze Word i PDF z aktualnym logo Masterpress.
+
+VIKI automatycznie wybiera głos Zofia, jeżeli jest zainstalowany w systemie.
+Jeżeli go nie ma, korzysta z dostępnego polskiego głosu przeglądarki lub systemu.
+Podczas odpowiedzi VIKI mikrofon jest automatycznie zatrzymywany i wraca po chwili ciszy,
+aby asystentka nie słyszała własnego głosu.
+
+W trybie czuwania VIKI ignoruje wszystkie wypowiedzi bez hasła aktywacyjnego.
+Jedno „VIKI” uruchamia tylko jedno polecenie, po którym asystentka ponownie zasypia.
+Jeżeli VIKI sama dopyta o brakującą informację, przez kilka sekund możesz
+odpowiedzieć bez ponownego hasła.
+
+Po samym haśle „VIKI” asystentka odpowiada krótko „Słucham” i czeka na pytanie.
+Puste rozpoznanie, sama kropka, przecinek lub hałas są ignorowane bez komunikatu.
+Jeśli pytanie jest niezrozumiałe, VIKI mówi tylko „Nie zrozumiałam. Powtórz proszę”
+i daje kilka sekund na jedną poprawioną wypowiedź.
+
+Tryb czuwania sprawdza również tymczasowe wyniki i kilka alternatyw rozpoznawania.
+Dzięki temu może wykryć „Wiki”, nawet jeżeli końcowy zapis Chrome pokazuje samą kropkę.
+
+Wyniki tymczasowe nie są wykonywane jako polecenia. VIKI czeka, aż użytkownik
+zakończy całe zdanie, więc fragment „gdzie” nie wywoła już odpowiedzi przed czasem.
+
+Na urządzeniach, na których Edge zapisuje krótkie hasło „Wiki” jako pojedynczą
+kropkę, dokładnie taki wynik jest traktowany jako aktywacja — wyłącznie gdy VIKI śpi.
+Po aktywacji kropki i inne znaki interpunkcyjne są ignorowane.

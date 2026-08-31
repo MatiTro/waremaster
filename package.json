@@ -8,16 +8,17 @@
   "scripts": {
     "install:ci": "bash scripts/install-ci.sh",
     "dev": "vite",
+    "dev:local": "vite --config vite.local.config.ts --host 127.0.0.1 --port 5173 --open",
     "build": "bash scripts/build-verified.sh",
-    "build:pages": "vite build --config vite.pages.config.ts",
     "start": "vinext start",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs",
+    "test": "npm run build && node --experimental-strip-types --test tests/*.test.mjs",
     "validate:artifact": "bash scripts/validate-artifact.sh",
     "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern dist-pages --ignore-pattern docs --ignore-pattern .next",
     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate"
   },
   "dependencies": {
     "@types/jsbarcode": "^3.11.4",
+    "docx": "^9.7.1",
     "drizzle-orm": "0.45.2",
     "jsbarcode": "^3.11.6",
     "lucide-react": "^1.27.0",

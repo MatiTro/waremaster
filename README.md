@@ -1,11 +1,15 @@
 # Warehouse Masterpress
 
-Firmowy prototyp aplikacji magazynowej Masterpress do:
+Firmowa aplikacja magazynowa Masterpress do:
 
 - raportowania dostaw,
 - kontrolowania palet w magazynach A i B,
 - analizowania zapasu według rodzaju surowca,
-- przeglądania i filtrowania historii dostaw.
+- przeglądania i filtrowania historii dostaw,
+- generowania kodów tylko dla prawidłowych lokalizacji,
+- układania grafiku zmian i planowania urlopów,
+- tworzenia kart mycia w Wordzie i PDF-ie,
+- obsługi głosowego asystenta VIKI.
 
 ## Uruchomienie na Windows
 
@@ -17,17 +21,19 @@ Firmowy prototyp aplikacji magazynowej Masterpress do:
 ### Start
 
 1. Rozpakuj archiwum.
-2. Otwórz PowerShell w katalogu projektu.
-3. Zainstaluj zależności:
+2. Kliknij dwukrotnie `URUCHOM_WAREHOUSE.bat`.
+
+Skrypt sprawdzi Node.js, zainstaluje zależności przy pierwszym starcie i otworzy
+`http://localhost:5173`. Alternatywnie można użyć terminala:
 
    ```powershell
-   npm.cmd install
+   npm.cmd ci --no-audit --no-fund
    ```
 
 4. Uruchom aplikację:
 
    ```powershell
-   npm.cmd run dev
+   npm.cmd run dev:local
    ```
 
 5. Otwórz adres pokazany w terminalu, standardowo:
@@ -41,14 +47,24 @@ włączoną na komputerach firmowych. Zatrzymanie aplikacji: `Ctrl+C`.
 
 ## Ważne informacje
 
-- Dane w tej wersji są demonstracyjne.
-- Dodanie dostawy aktualizuje liczniki i statystyki w bieżącej sesji.
-- Odświeżenie strony przywraca dane początkowe.
-- Trwały zapis będzie wymagał podłączenia bazy danych.
+- Struktura obu magazynów jest wspólna dla mapy, raportów i generatora kodów.
+- Aplikacja startuje bez fikcyjnych zapasów, dostawców, dostaw i numerów NI.
+- Do czasu integracji stan lokalizacji jest oznaczony jako „Brak danych”, a nie
+  jako wolny lub zajęty.
+- Rejestr dostaw i kartoteka dostawców są zachowywane lokalnie w przeglądarce.
+- Lista pracowników, grafik, urlopy i odpowiedzialność za sprzątanie są również
+  zachowywane lokalnie do czasu podłączenia wspólnej bazy danych.
+- Karta mycia obsługuje formularze F-02a, F-02b i F-02c dla magazynu surowców
+  oraz magazynu wyrobów gotowych. Dokument Word zawiera aktualne logo firmy.
+- Dane lokalne nie są współdzielone między urządzeniami. Wspólny zapis zapewni
+  baza aplikacji po wykonaniu integracji.
+- Instrukcja serwerowa znajduje się w pliku `PRODUKCJA.md`.
+- Zakres danych potrzebnych z D365 opisuje `INTEGRACJA_DANYCH.md`.
 
 ## Najważniejsze pliki
 
 - `app/page.tsx` — interfejs i logika aplikacji
+- `app/warehouse-model.ts` — jedna struktura magazynów i walidacja lokalizacji
 - `app/globals.css` — firmowy wygląd i responsywność
 - `public/masterpress-logo-white.png` — logo na ciemnym tle
 - `public/masterpress-logo-dark.png` — logo na jasnym tle
