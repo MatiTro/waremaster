@@ -63,19 +63,26 @@ test("VIKI jest małym modułem głosowym bez okna czatu i podpowiedzi", () => {
   assert.match(pageSource, /onClick=\{wakeMode \? stopWakeMode : startWakeMode\}/);
 });
 
-test("Grafik korzysta z pustej listy pracowników i pilnuje obsady oraz urlopów", () => {
+test("Grafik ma zwarty arkusz, osobne weekendy i profesjonalny wydruk", () => {
   assert.match(pageSource, /id: "schedule"/);
   assert.match(scheduleSource, /safeReadArray<Employee>/);
-  assert.match(scheduleSource, /rotationShiftForDate/);
-  assert.match(scheduleSource, /Automat rotacji/);
-  assert.match(scheduleSource, /Uwzględnij weekendy/);
-  assert.match(scheduleSource, /pominięto z powodu urlopu/);
+  assert.equal(scheduleSource.includes("Automat rotacji"), false);
+  assert.equal(scheduleSource.includes("Uwzględnij weekendy"), false);
+  assert.equal(scheduleSource.includes("shift-add"), false);
+  assert.match(scheduleSource, /Praca weekend/);
+  assert.match(scheduleSource, /schedule-range-builder/);
+  assert.match(scheduleSource, /range-calendar-grid/);
+  assert.match(scheduleSource, /schedule-matrix-cell/);
+  assert.match(scheduleSource, /effectiveWeekendDate/);
+  assert.match(scheduleSource, /Pominięto/);
   assert.match(scheduleSource, /tone: "danger"/);
   assert.match(scheduleSource, /schedule-print-document/);
-  assert.match(scheduleSource, /schedule-print-name-list/);
+  assert.match(scheduleSource, /schedule-print-page/);
+  assert.match(scheduleSource, /printEmployeeGroups/);
   assert.match(globalStyles, /@page workforce-landscape/);
   assert.match(globalStyles, /size: A4 landscape/);
   assert.match(globalStyles, /workforce-module > \*:not\(\.schedule-print-document\)/);
+  assert.match(globalStyles, /schedule-print-page tbody tr\.weekend/);
 });
 
 test("Karta mycia obsługuje trzy formularze, oba magazyny i eksport Word", () => {

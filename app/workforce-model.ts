@@ -20,6 +20,14 @@ export type PlannedLeave = {
   note: string;
 };
 
+export type WeekendAssignment = {
+  id: string;
+  date: string;
+  employeeId: string;
+  fromTime: string;
+  toTime: string;
+};
+
 export type CleaningWarehouse = "raw" | "finished";
 export type CleaningFrequency = "daily" | "weekly" | "monthly";
 
@@ -34,12 +42,13 @@ export const workforceStorageKeys = {
   employees: "warehouse-masterpress:employees:production:v1",
   assignments: "warehouse-masterpress:shift-assignments:production:v1",
   leaves: "warehouse-masterpress:planned-leaves:production:v1",
+  weekendAssignments:
+    "warehouse-masterpress:weekend-assignments:production:v1",
   cleaningResponsibilities:
     "warehouse-masterpress:cleaning-responsibilities:production:v1",
 } as const;
 
 export const shifts: ShiftId[] = ["I", "II", "III"];
-export const rotationShifts: ShiftId[] = ["I", "III", "II"];
 
 function utcDate(value: string) {
   const [year, month, day] = value.split("-").map(Number);
@@ -50,14 +59,6 @@ function utcDate(value: string) {
 
 function utcIsoDate(date: Date) {
   return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
-}
-
-function isoWeekMonday(value: string) {
-  const date = utcDate(value);
-  if (!date) return null;
-  const weekday = date.getUTCDay() || 7;
-  date.setUTCDate(date.getUTCDate() - weekday + 1);
-  return date;
 }
 
 export function dateRange(from: string, to: string) {
@@ -74,22 +75,6 @@ export function dateRange(from: string, to: string) {
 export function isWeekend(value: string) {
   const date = utcDate(value);
   return date ? [0, 6].includes(date.getUTCDay()) : false;
-}
-
-export function rotationShiftForDate(
-  startDate: string,
-  date: string,
-  firstShift: ShiftId,
-) {
-  const startMonday = isoWeekMonday(startDate);
-  const dateMonday = isoWeekMonday(date);
-  const startIndex = rotationShifts.indexOf(firstShift);
-  if (!startMonday || !dateMonday || startIndex < 0) return firstShift;
-  const weekOffset = Math.floor(
-    (dateMonday.getTime() - startMonday.getTime()) / (7 * 86_400_000),
-  );
-  const normalizedOffset = ((weekOffset % rotationShifts.length) + rotationShifts.length) % rotationShifts.length;
-  return rotationShifts[(startIndex + normalizedOffset) % rotationShifts.length];
 }
 
 function localDate(value: string) {
