@@ -218,6 +218,13 @@ export function ScheduleModule() {
     return () => window.removeEventListener("afterprint", finish);
   }, []);
 
+  useEffect(() => {
+    const printFromViki = () => printSchedule();
+    window.addEventListener("warehouse-print-schedule", printFromViki);
+    return () =>
+      window.removeEventListener("warehouse-print-schedule", printFromViki);
+  }, []);
+
   const dates = useMemo(() => monthDates(selectedMonth), [selectedMonth]);
   const calendarDates = useMemo(
     () => monthDates(calendarMonth),
@@ -1390,13 +1397,15 @@ export function ScheduleModule() {
             key={"print-group-" + groupIndex}
           >
             <header>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                alt="Masterpress"
-                src={import.meta.env.BASE_URL + "masterpress-logo-dark.png"}
-              />
-              <div>
+              <div className="schedule-print-brand">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  alt="Masterpress"
+                  src={import.meta.env.BASE_URL + "masterpress-logo-dark.png"}
+                />
                 <span>WAREHOUSE MASTERPRESS</span>
+              </div>
+              <div className="schedule-print-heading">
                 <h1>Grafik pracowników</h1>
                 <p>{formatMonth(selectedMonth)}</p>
               </div>
@@ -1406,6 +1415,7 @@ export function ScheduleModule() {
                     ZESPÓŁ {groupIndex + 1}/{printEmployeeGroups.length}
                   </small>
                 )}
+                <small>DATA WYDRUKU</small>
                 <strong>{formatDate(localIsoDate())}</strong>
               </aside>
             </header>

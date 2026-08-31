@@ -21,4 +21,7 @@ Przy następnych zmianach podmień wszystkie pliki, łącznie z folderem docs.
 Wgrywanie nowych plików nie usuwa starych automatycznie, ale stare pliki
 w docs/assets nie przeszkadzają, ponieważ index.html wskazuje aktualną wersję.
 
+Plik w .github/workflows służy wyłącznie do ręcznego sprawdzenia kompilacji.
+Publikacja strony korzysta z prostszego ustawienia main / docs opisanego wyżej.
+
 Asystent głosowy wymaga aktualnego Chrome lub Edge oraz zgody na mikrofon.

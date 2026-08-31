@@ -1,51 +1,57 @@
-# Uruchomienie produkcyjne
+# Uruchomienie na serwerze firmowym
 
-## Wymagania serwera
+## Wersja gotowa do wdrożenia teraz
 
-- Node.js 24 LTS lub co najmniej 22.13,
+Aktualna aplikacja jest statycznym interfejsem webowym. Dział IT może umieścić
+zawartość katalogu `www` z paczki serwerowej na IIS, Nginx, Apache lub innym
+firmowym serwerze plików WWW. Nie trzeba uruchamiać Node.js na serwerze, jeśli
+publikowana jest już skompilowana zawartość `www`.
+
+Wymagane są:
+
+- wewnętrzny adres DNS, np. `warehouse.masterpress.local`,
+- HTTPS z certyfikatem zaufanym przez tablety i komputery,
 - dostęp z sieci magazynowej,
-- wewnętrzna nazwa DNS, np. `warehouse.masterpress.local`,
-- certyfikat HTTPS,
-- reverse proxy IIS, Nginx albo inny mechanizm firmowy,
-- usługa uruchamiająca aplikację automatycznie po restarcie serwera.
+- ustawienie `index.html` jako dokumentu domyślnego,
+- wyłączenie długiego cache dla `index.html`, aby aktualizacje były widoczne.
 
-HTTPS jest istotny na tabletach: przeglądarka może zablokować mikrofon VIKI,
-jeżeli aplikacja zostanie otwarta przez zwykły adres `http://adres-ip`.
-Wyjątkiem jest uruchomienie na tym samym komputerze przez `localhost`.
+HTTPS jest konieczny dla mikrofonu VIKI. Przeglądarki mogą blokować mikrofon na
+zwykłym adresie `http://adres-ip`; wyjątkiem jest lokalny adres `localhost`.
 
-## Budowanie wydania
+## Ponowne zbudowanie frontendu
+
+Jeżeli dział IT chce zbudować aplikację ze źródeł:
 
 ```powershell
-npm.cmd ci
+npm.cmd ci --no-audit --no-fund
 npm.cmd run lint
-npm.cmd test
-npm.cmd run build
-npm.cmd run start
+npm.cmd run build:static
 ```
 
-Serwer lub reverse proxy powinien kierować ruch HTTPS do portu aplikacji.
-Port można ustawić zgodnie ze standardem działu IT. Nie należy udostępniać
-procesu Node bezpośrednio do Internetu.
+Gotowe pliki pojawią się w katalogu `docs`. Na serwer należy opublikować jego
+zawartość, a nie pliki `app/*.tsx` ani główny `index.html` projektu.
 
-## Stan przed integracją
+## Ważne ograniczenie przed podłączeniem bazy
 
-- mapy, pojemności i walidacja kodów korzystają z jednego modelu,
-- aplikacja uruchamia się z pustym stanem, bez rekordów demonstracyjnych,
-- dostawy i kartoteka dostawców zapisują się w pamięci przeglądarki,
-- zapis lokalny nie jest współdzielony między tabletami,
-- wyszukiwanie ładunków nie generuje wyników do czasu podłączenia źródła danych,
-- zajętość miejsc, numery NI i rekomendacje VIKI pozostają niedostępne do czasu
-  podłączenia rzeczywistych danych oraz reguł,
-- pełne testy wielostanowiskowe należy rozpocząć po podłączeniu bazy aplikacji.
+Serwer WWW udostępni tę samą aplikację wszystkim urządzeniom, ale obecnie
+rejestr dostaw, pracownicy, grafik, urlopy, praca weekendowa oraz plan mycia są
+zapisywane w pamięci konkretnej przeglądarki. Wpis z tabletu A nie pojawi się
+jeszcze automatycznie na tablecie B.
 
-## Zalecane kroki działu IT
+Wspólny zapis wymaga backendu i bazy aplikacji. D365 powinien pozostać źródłem
+odczytu danych magazynowych; przeglądarki nie powinny łączyć się bezpośrednio z
+bazą D365.
 
-1. Przygotować maszynę lub kontener dla aplikacji.
-2. Nadać wewnętrzną nazwę DNS i certyfikat HTTPS.
-3. Otworzyć dostęp wyłącznie z wymaganych sieci firmowych.
-4. Uruchomić aplikację jako usługę z automatycznym restartem.
-5. Przygotować kopie bezpieczeństwa bazy po jej podłączeniu.
-6. Włączyć logowanie błędów i kontrolę dostępności usługi.
+## Docelowy etap wielostanowiskowy
 
-Nie jest wymagany pulpit zdalny dla magazynierów. Administrator powinien mieć
-dostęp serwisowy do wdrożenia, konfiguracji i logów.
+Dział IT powinien przygotować:
+
+1. Bazę aplikacji, najlepiej SQL Server zgodny ze standardem firmy.
+2. Konto techniczne aplikacji z minimalnymi uprawnieniami.
+3. Backend/API dostępny tylko w sieci firmowej przez HTTPS.
+4. Widok D365 lub API tylko do odczytu stanów, lokalizacji, NI, materiałów,
+   dostawców, partii, ilości i masy.
+5. Kopie bezpieczeństwa, retencję logów i monitoring dostępności.
+
+Zakres rekordów i proponowanych endpointów opisuje `INTEGRACJA_DANYCH.md`.
+Pełna lista pytań głosowych znajduje się w `SLOWNIK_VIKI.md`.

@@ -1,0 +1,5 @@
+# Planowane ustawienia etapu z backendem — bez prawdziwych haseł.
+APP_PUBLIC_URL=https://warehouse.masterpress.local
+APP_DATABASE_URL=<ustawia-administrator-na-serwerze>
+D365_READONLY_SOURCE=<widok-sql-lub-adres-api>
+D365_SERVICE_ACCOUNT=<konto-techniczne-bez-hasla-w-tym-pliku>

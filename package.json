@@ -10,6 +10,7 @@
     "dev": "vite",
     "dev:local": "vite --config vite.local.config.ts --host 127.0.0.1 --port 5173 --open",
     "build": "bash scripts/build-verified.sh",
+    "build:static": "vite build --config vite.pages.config.ts",
     "start": "vinext start",
     "test": "npm run build && node --experimental-strip-types --test tests/*.test.mjs",
     "validate:artifact": "bash scripts/validate-artifact.sh",

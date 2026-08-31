@@ -1,0 +1,27 @@
+server {
+    listen 443 ssl;
+    server_name warehouse.masterpress.local;
+
+    root /var/www/warehouse-masterpress;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location = /index.html {
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+    }
+
+    location /assets/ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+    }
+
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "same-origin" always;
+    add_header Permissions-Policy "microphone=(self)" always;
+
+    # Ścieżki certyfikatu ustawia dział IT zgodnie ze standardem firmy.
+    ssl_certificate /sciezka/do/certyfikatu.pem;
+    ssl_certificate_key /sciezka/do/klucza.pem;
+}

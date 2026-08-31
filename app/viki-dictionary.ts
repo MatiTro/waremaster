@@ -105,8 +105,7 @@ export const voiceIntents = {
   ],
   openSchedule: [
     "otworz grafik", "pokaz grafik", "przejdz do grafiku", "grafik zmian",
-    "grafik pracownikow", "lista pracownikow", "pokaz urlopy", "zaplanowane urlopy",
-    "kto pracuje", "kto ma zmiane", "obsada zmiany", "plan zmian",
+    "grafik pracownikow", "wejdz w grafik", "otworz plan zmian", "plan zmian",
   ],
   openCleaning: [
     "otworz karte mycia", "pokaz karte mycia", "karta mycia",

@@ -119,11 +119,55 @@ pytaniu można odpowiedzieć bez ponownego hasła.
 - „VIKI, otwórz generator kodów.”
 - „VIKI, zgłoś brak ładunku do logistyki.”
 
-## Grafik i karty mycia
+## Grafik pracowników
 
-- „VIKI, pokaż grafik zmian.”
-- „VIKI, otwórz listę pracowników.”
-- „VIKI, pokaż zaplanowane urlopy.”
+VIKI czyta aktualny grafik zapisany w aplikacji. Odpowiedzi są celowo krótkie,
+a po pytaniu automatycznie otwiera moduł „Grafik”. Rozumie daty względne,
+dni tygodnia, daty kalendarzowe oraz imię lub nazwisko pracownika.
+
+Obsada i zmiany:
+
+- „VIKI, kto pracuje dzisiaj?”
+- „VIKI, kto pracuje jutro na drugiej zmianie?”
+- „VIKI, ile osób jest dziś na pierwszej zmianie?”
+- „VIKI, jaka jest obsada pojutrze?”
+- „VIKI, kto nie ma jutro wpisu w grafiku?”
+- „VIKI, kto ma dzisiaj wolne?”
+- „VIKI, kto pracuje 5 września?”
+- „VIKI, jak wygląda grafik w przyszłym tygodniu?”
+
+Konkretny pracownik:
+
+- „VIKI, na której zmianie jest dzisiaj Anna Kowalska?”
+- „VIKI, czy Jan Nowak pracuje jutro?”
+- „VIKI, jakie godziny ma Jan w sobotę?”
+- „VIKI, jak pracuje Kowalska w tym tygodniu?”
+- „VIKI, pokaż listę pracowników.”
+
+Urlopy i weekendy:
+
+- „VIKI, kto ma dzisiaj urlop?”
+- „VIKI, kto ma urlop w tym miesiącu?”
+- „VIKI, kiedy Anna ma najbliższy urlop?”
+- „VIKI, czy Jan ma jutro urlop?”
+- „VIKI, kto pracuje w najbliższy weekend?”
+- „VIKI, kto pracuje w sobotę?”
+- „VIKI, kto pracuje w niedzielę?”
+
+Godziny indywidualne i dokument:
+
+- „VIKI, kto pracuje dzisiaj od 10 do 18?”
+- „VIKI, kto pracuje od 6:30 do 18:30?”
+- „VIKI, kto pracuje od 20 do 6?”
+- „VIKI, wydrukuj grafik PDF.”
+- „VIKI, otwórz grafik.”
+
+VIKI nie zmienia grafiku samym głosem. Polecenia „dodaj pracownika”, „ustaw
+zmianę” albo „zaplanuj urlop” bezpiecznie otwierają formularz, w którym
+magazynier potwierdza dane ręcznie.
+
+## Karty mycia
+
 - „VIKI, otwórz kartę mycia.”
 - „VIKI, pokaż grafik sprzątania.”
 

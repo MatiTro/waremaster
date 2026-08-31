@@ -52,6 +52,12 @@ nazwy lub aliasu według reguły ustalonej z biznesem.
 - `GET /api/loads/search?purchaseOrder=...` — wyszukiwanie po zamówieniu,
 - `GET /api/loads/search?supplier=...` — wyszukiwanie po dostawcy,
 - `GET/POST/PUT/DELETE /api/deliveries` — niezależny rejestr dostaw,
+- `GET/POST/PUT/DELETE /api/employees` — lista pracowników,
+- `GET/POST/PUT/DELETE /api/schedule` — zmiany i indywidualne godziny pracy,
+- `GET/POST/PUT/DELETE /api/leaves` — planowane urlopy,
+- `GET/POST/PUT/DELETE /api/weekend-assignments` — praca weekendowa,
+- `GET/POST/PUT/DELETE /api/cleaning-responsibilities` — odpowiedzialność za
+  karty mycia,
 - `GET/POST/PUT /api/rules` — dostawcy, surowce, masa i dozwolone regały.
 
 ## Późniejsza obsługa telewizora

@@ -44,6 +44,7 @@ import {
 } from "react";
 import { CleaningModule } from "./cleaning-module";
 import { ScheduleModule, WorkforceSummary } from "./schedule-module";
+import { answerScheduleVoiceCommand } from "./schedule-voice";
 import {
   detectVikiWake,
   extractFirstVikiNumber,
@@ -58,6 +59,14 @@ import {
   VikiWarehouseReference,
   voiceIntents,
 } from "./viki-dictionary";
+import {
+  safeReadArray,
+  workforceStorageKeys,
+  type Employee,
+  type PlannedLeave,
+  type ShiftAssignment,
+  type WeekendAssignment,
+} from "./workforce-model";
 import {
   blockStats,
   capacities,
@@ -1685,6 +1694,27 @@ export default function Home() {
     if (hasIntent(normalized, voiceIntents.openBarcodes)) {
       navigate("barcodes");
       speakAnswer("Otwieram generator kodów kreskowych.");
+      return;
+    }
+
+    const scheduleAnswer = answerScheduleVoiceCommand(command, {
+      employees: safeReadArray<Employee>(workforceStorageKeys.employees),
+      assignments: safeReadArray<ShiftAssignment>(
+        workforceStorageKeys.assignments,
+      ),
+      leaves: safeReadArray<PlannedLeave>(workforceStorageKeys.leaves),
+      weekendAssignments: safeReadArray<WeekendAssignment>(
+        workforceStorageKeys.weekendAssignments,
+      ),
+    });
+    if (scheduleAnswer) {
+      navigate("schedule");
+      if (scheduleAnswer.action === "print") {
+        window.setTimeout(() => {
+          window.dispatchEvent(new Event("warehouse-print-schedule"));
+        }, 500);
+      }
+      speakAnswer(scheduleAnswer.text, scheduleAnswer.spoken);
       return;
     }
 
