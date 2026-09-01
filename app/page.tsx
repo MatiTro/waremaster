@@ -17,7 +17,6 @@ import {
   MapPin,
   Maximize2,
   Menu,
-  Mic,
   Minimize2,
   PackageCheck,
   PackageOpen,
@@ -43,6 +42,12 @@ import {
   useState,
 } from "react";
 import { CleaningModule } from "./cleaning-module";
+import {
+  FinishedDashboard,
+  FinishedInventory,
+  FinishedMap,
+  ShipmentsModule,
+} from "./finished-warehouse";
 import { ScheduleModule, WorkforceSummary } from "./schedule-module";
 import { answerScheduleVoiceCommand } from "./schedule-voice";
 import {
@@ -104,10 +109,13 @@ type View =
   | "inventory"
   | "map"
   | "deliveries"
+  | "shipments"
   | "schedule"
   | "cleaning"
   | "suppliers"
   | "barcodes";
+
+type WarehouseArea = "raw" | "finished";
 
 type SpeechAlternativeLike = { transcript: string; confidence?: number };
 type SpeechResultLike = ArrayLike<SpeechAlternativeLike> & { isFinal?: boolean };
@@ -360,12 +368,14 @@ function rackStatsLabel(stats: RackStats) {
     : `regał ${stats.block}-${String(stats.rack).padStart(2, "0")} w Nowym magazynie`;
 }
 
-const navItems: {
+type NavItem = {
   id: View;
   label: string;
   description: string;
   icon: typeof LayoutDashboard;
-}[] = [
+};
+
+const rawNavItems: NavItem[] = [
   {
     id: "dashboard",
     label: "Start",
@@ -409,6 +419,50 @@ const navItems: {
     icon: QrCode,
   },
 ];
+
+const finishedNavItems: NavItem[] = [
+  {
+    id: "dashboard",
+    label: "Start",
+    description: "Operacje wyrobów gotowych",
+    icon: LayoutDashboard,
+  },
+  {
+    id: "inventory",
+    label: "Raport zapasów",
+    description: "Wyroby, partie i palety",
+    icon: BarChart3,
+  },
+  {
+    id: "map",
+    label: "Mapa magazynu",
+    description: "Strefy wyrobów gotowych",
+    icon: MapPin,
+  },
+  {
+    id: "shipments",
+    label: "Wysyłki",
+    description: "Plan wydań i ładunków",
+    icon: Truck,
+  },
+  {
+    id: "schedule",
+    label: "Grafik",
+    description: "Osobny zespół i urlopy",
+    icon: CalendarDays,
+  },
+  {
+    id: "cleaning",
+    label: "Karta mycia",
+    description: "Dokumentacja tego obszaru",
+    icon: Droplets,
+  },
+];
+
+const warehouseAreaLabels: Record<WarehouseArea, string> = {
+  raw: "Magazyn surowców",
+  finished: "Magazyn wyrobów gotowych",
+};
 
 function Barcode({
   value,
@@ -455,6 +509,7 @@ function StatusBadge({
 
 export default function Home() {
   const [activeView, setActiveView] = useState<View>("dashboard");
+  const [warehouseArea, setWarehouseArea] = useState<WarehouseArea>("raw");
   const [mobileNav, setMobileNav] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const warehouses = localWarehouseSnapshot;
@@ -510,7 +565,7 @@ export default function Home() {
   const [editingSupplierId, setEditingSupplierId] = useState<number | null>(
     null,
   );
-  const [voiceSpeaking, setVoiceSpeaking] = useState(false);
+  const [, setVoiceSpeaking] = useState(false);
   const [selectedVoiceName, setSelectedVoiceName] = useState("");
   const [wakeMode, setWakeMode] = useState(false);
   const [vikiAwake, setVikiAwake] = useState(false);
@@ -541,6 +596,9 @@ export default function Home() {
   >({ warehouse: "main", rack: "A", topic: "rack" });
 
   const totalPallets = warehouses.A + warehouses.B;
+  const visibleNavItems = warehouseArea === "raw"
+    ? rawNavItems
+    : finishedNavItems;
   const monthlyDeliveries = useMemo(
     () =>
       deliveries.filter((delivery) => delivery.date.startsWith(deliveryMonth)),
@@ -799,6 +857,15 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  function selectWarehouseArea(area: WarehouseArea) {
+    if (area === warehouseArea) return;
+    setWarehouseArea(area);
+    setActiveView("dashboard");
+    setGlobalSearch("");
+    setMobileNav(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   function openMainLocation(
     rack: MainRack,
     column: number,
@@ -845,6 +912,14 @@ export default function Home() {
     const normalized = query.toLocaleUpperCase("pl").replace(/\s+/g, "");
     if (!normalized) {
       setToast("Wpisz lokalizację, NI, dostawę, ładunek lub dostawcę.");
+      return;
+    }
+
+    if (warehouseArea === "finished") {
+      navigate("shipments");
+      setToast(
+        "Wyszukiwanie wyrobów i wysyłek uruchomi się po podłączeniu danych D365.",
+      );
       return;
     }
 
@@ -2124,6 +2199,9 @@ export default function Home() {
     }
   }
 
+  // Funkcja pozostaje przygotowana do ponownego włączenia VIKI po zbudowaniu
+  // obu obszarów; w tej wersji interfejs nie udostępnia jej użytkownikowi.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   function startWakeMode() {
     if (!speechRecognitionConstructor()) {
       speakAnswer("Tryb VIKI wymaga aktualnej wersji Chrome albo Edge.");
@@ -2288,7 +2366,7 @@ export default function Home() {
 
   return (
     <main
-      className={`app-shell ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}
+      className={`app-shell area-${warehouseArea} ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}
     >
       <aside className={`sidebar ${mobileNav ? "mobile-open" : ""}`}>
         <div className="brand-row">
@@ -2309,7 +2387,7 @@ export default function Home() {
         </div>
 
         <nav className="main-nav" aria-label="Nawigacja główna">
-          {navItems.map(({ id, label, description, icon: Icon }) => (
+          {visibleNavItems.map(({ id, label, description, icon: Icon }) => (
             <button
               className={activeView === id ? "active" : ""}
               key={id}
@@ -2328,14 +2406,28 @@ export default function Home() {
           ))}
         </nav>
 
-        <div className="station-row">
-          <span>
-            <Warehouse size={18} />
-          </span>
-          <div>
-            <strong>Stanowisko magazynowe</strong>
-            <small>Bez logowania imiennego</small>
-          </div>
+        <div className="warehouse-area-switcher">
+          <span className="warehouse-area-label">OBSZAR PRACY</span>
+          <button
+            aria-pressed={warehouseArea === "raw"}
+            className={warehouseArea === "raw" ? "active" : ""}
+            onClick={() => selectWarehouseArea("raw")}
+            type="button"
+          >
+            <span><Boxes size={18} /></span>
+            <div><strong>Magazyn surowców</strong><small>Przyjęcia i surowce</small></div>
+            <Check size={16} />
+          </button>
+          <button
+            aria-pressed={warehouseArea === "finished"}
+            className={warehouseArea === "finished" ? "active" : ""}
+            onClick={() => selectWarehouseArea("finished")}
+            type="button"
+          >
+            <span><PackageCheck size={18} /></span>
+            <div><strong>Wyroby gotowe</strong><small>Wydania i wysyłki</small></div>
+            <Check size={16} />
+          </button>
         </div>
       </aside>
 
@@ -2364,28 +2456,34 @@ export default function Home() {
           </button>
           <div className="topbar-title">
             <p>MASTERPRESS · SYSTEM MAGAZYNOWY</p>
-            <h1>{navItems.find((item) => item.id === activeView)?.label}</h1>
+            <h1>{visibleNavItems.find((item) => item.id === activeView)?.label}</h1>
           </div>
+          <span className="topbar-area-badge">
+            {warehouseArea === "raw" ? <Boxes /> : <PackageCheck />}
+            {warehouseAreaLabels[warehouseArea]}
+          </span>
           <form className="topbar-search" onSubmit={runGlobalSearch}>
             <Search />
             <input
               aria-label="Szukaj w aplikacji"
               onChange={(event) => setGlobalSearch(event.target.value)}
-              placeholder="Lokalizacja, NI, dostawa, ładunek…"
+              placeholder={warehouseArea === "raw"
+                ? "Lokalizacja, NI, dostawa, ładunek…"
+                : "Ładunek, wysyłka, klient, wyrób…"}
               value={globalSearch}
             />
             <button type="submit">Szukaj</button>
           </form>
         </header>
 
-        {activeView === "dashboard" && (
+        {warehouseArea === "raw" && activeView === "dashboard" && (
           <div className="view-stack">
             <section className="command-hero">
               <div>
                 <span className="hero-label">
                   <Sparkles size={14} /> Szybki dostęp do pracy magazynu
                 </span>
-                <h2>Magazyn w jednym miejscu</h2>
+                <h2>Magazyn surowców w jednym miejscu</h2>
                 <p>
                   Sprawdź zajętość, znajdź lokalizację, zarejestruj dostawę
                   albo przygotuj kod kreskowy.
@@ -2393,7 +2491,7 @@ export default function Home() {
               </div>
             </section>
 
-            <WorkforceSummary />
+            <WorkforceSummary area="raw" />
 
             <section className="kpi-grid">
               <article className="metric-card metric-primary">
@@ -2603,7 +2701,7 @@ export default function Home() {
           </div>
         )}
 
-        {activeView === "inventory" && (
+        {warehouseArea === "raw" && activeView === "inventory" && (
           <div className="view-stack">
             <section className="view-intro">
               <div>
@@ -2758,7 +2856,7 @@ export default function Home() {
           </div>
         )}
 
-        {activeView === "map" && (
+        {warehouseArea === "raw" && activeView === "map" && (
           <div className="view-stack location-navigator-view">
             <section className="warehouse-switch panel">
               <div>
@@ -3294,7 +3392,7 @@ export default function Home() {
           </div>
         )}
 
-        {activeView === "deliveries" && (
+        {warehouseArea === "raw" && activeView === "deliveries" && (
           <div className="view-stack">
             <section className="view-intro">
               <div>
@@ -3480,7 +3578,7 @@ export default function Home() {
           </div>
         )}
 
-        {activeView === "suppliers" && (
+        {warehouseArea === "raw" && activeView === "suppliers" && (
           <div className="view-stack">
             <section className="view-intro supplier-intro">
               <div>
@@ -3640,7 +3738,7 @@ export default function Home() {
           </div>
         )}
 
-        {activeView === "barcodes" && (
+        {warehouseArea === "raw" && activeView === "barcodes" && (
           <div className="view-stack">
             <section className="view-intro">
               <div>
@@ -4036,28 +4134,40 @@ export default function Home() {
           </div>
         )}
 
-        {activeView === "schedule" && <ScheduleModule />}
+        {warehouseArea === "finished" && activeView === "dashboard" && (
+          <>
+            <FinishedDashboard onNavigate={navigate} />
+            <div className="view-stack finished-workforce-summary">
+              <WorkforceSummary area="finished" />
+            </div>
+          </>
+        )}
 
-        {activeView === "cleaning" && <CleaningModule />}
+        {warehouseArea === "finished" && activeView === "inventory" && (
+          <FinishedInventory />
+        )}
+
+        {warehouseArea === "finished" && activeView === "map" && (
+          <FinishedMap />
+        )}
+
+        {warehouseArea === "finished" && activeView === "shipments" && (
+          <ShipmentsModule />
+        )}
+
+        {activeView === "schedule" && (
+          <ScheduleModule key={warehouseArea} area={warehouseArea} />
+        )}
+
+        {activeView === "cleaning" && (
+          <CleaningModule key={warehouseArea} warehouse={warehouseArea} />
+        )}
 
         <footer>
           <span>Warehouse Masterpress · system magazynowy</span>
           <span>Wersja operacyjna · gotowa do integracji danych</span>
         </footer>
       </section>
-
-      <button
-        aria-label={wakeMode ? "Wyłącz czuwanie VIKI" : "Włącz czuwanie VIKI"}
-        aria-pressed={wakeMode}
-        className={`voice-assistant-trigger ${wakeMode ? "active" : ""} ${vikiAwake ? "awake" : ""} ${voiceSpeaking ? "speaking" : ""}`}
-        onClick={wakeMode ? stopWakeMode : startWakeMode}
-        title={wakeMode ? "VIKI czuwa — kliknij, aby wyłączyć" : "Kliknij, aby włączyć VIKI"}
-        type="button"
-      >
-        <Mic />
-        <span>VIKI</span>
-        <i aria-hidden="true" />
-      </button>
 
       {deliveryModal && (
         <div

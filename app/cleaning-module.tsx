@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   ClipboardCheck,
   Download,
-  Droplets,
   FileDown,
   Printer,
   Users,
@@ -22,6 +21,7 @@ import {
   weekNumber,
   weeksInIsoYear,
   workforceStorageKeys,
+  workforceStorageKeysByArea,
   yearFromWeekKey,
   type CleaningFrequency,
   type CleaningResponsibility,
@@ -86,9 +86,13 @@ function frequencyLabel(frequency: CleaningFrequency) {
   return "miesięcznym";
 }
 
-export function CleaningModule() {
+export function CleaningModule({
+  warehouse,
+}: {
+  warehouse: CleaningWarehouse;
+}) {
+  const storageKeys = workforceStorageKeysByArea[warehouse];
   const [ready, setReady] = useState(false);
-  const [warehouse, setWarehouse] = useState<CleaningWarehouse>("raw");
   const [frequency, setFrequency] = useState<CleaningFrequency>("weekly");
   const [selectedWeek, setSelectedWeek] = useState(currentWeekKey());
   const [selectedMonth, setSelectedMonth] = useState(currentMonthKey());
@@ -106,24 +110,28 @@ export function CleaningModule() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      setEmployees(safeReadArray<Employee>(workforceStorageKeys.employees));
-      setResponsibilities(
-        safeReadArray<CleaningResponsibility>(
-          workforceStorageKeys.cleaningResponsibilities,
-        ),
+      setEmployees(safeReadArray<Employee>(storageKeys.employees));
+      const stored = safeReadArray<CleaningResponsibility>(
+        storageKeys.cleaningResponsibilities,
       );
+      const migrated = warehouse === "finished" && stored.length === 0
+        ? safeReadArray<CleaningResponsibility>(
+          workforceStorageKeys.cleaningResponsibilities,
+        ).filter((item) => item.warehouse === "finished")
+        : stored;
+      setResponsibilities(migrated);
       setReady(true);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [storageKeys, warehouse]);
 
   useEffect(() => {
     if (!ready) return;
     window.localStorage.setItem(
-      workforceStorageKeys.cleaningResponsibilities,
+      storageKeys.cleaningResponsibilities,
       JSON.stringify(responsibilities),
     );
-  }, [ready, responsibilities]);
+  }, [ready, responsibilities, storageKeys]);
 
   useEffect(() => {
     if (!notice) return;
@@ -252,11 +260,11 @@ export function CleaningModule() {
     <div className="view-stack cleaning-module">
       <section className="view-intro cleaning-intro">
         <div>
-          <span>DOKUMENTACJA HIGIENY</span>
+          <span>DOKUMENTACJA HIGIENY · {warehouseLabels[warehouse]}</span>
           <h2>Karta mycia i dezynfekcji</h2>
           <p>
-            Wybierz obszar i okres. Daty, rok i numer tygodnia uzupełnią się
-            automatycznie.
+            Zakres czynności jest dopasowany do wybranego magazynu. Wybierz
+            układ i okres, a daty uzupełnią się automatycznie.
           </p>
         </div>
       </section>
@@ -270,24 +278,11 @@ export function CleaningModule() {
       <section className="cleaning-builder-grid">
         <article className="panel cleaning-builder">
           <div className="panel-heading">
-            <div><span>KREATOR DOKUMENTU</span><h3>Ustaw kartę w trzech krokach</h3></div>
+            <div><span>KREATOR DOKUMENTU</span><h3>Ustaw kartę w dwóch krokach</h3></div>
           </div>
 
           <div className="builder-step">
             <span>1</span>
-            <div><strong>Wybierz magazyn</strong><small>Zakres czynności dopasuje się automatycznie.</small></div>
-          </div>
-          <div className="choice-cards two">
-            <button className={warehouse === "raw" ? "active" : ""} onClick={() => setWarehouse("raw")} type="button">
-              <Droplets /><strong>Magazyn surowców</strong><small>Nowy magazyn i materiały</small>
-            </button>
-            <button className={warehouse === "finished" ? "active" : ""} onClick={() => setWarehouse("finished")} type="button">
-              <ClipboardCheck /><strong>Magazyn wyrobów gotowych</strong><small>Regały K, owijarka i rampy</small>
-            </button>
-          </div>
-
-          <div className="builder-step">
-            <span>2</span>
             <div><strong>Wybierz układ dokumentu</strong><small>Zgodny z F-02a, F-02b lub F-02c.</small></div>
           </div>
           <div className="frequency-switch">
@@ -299,7 +294,7 @@ export function CleaningModule() {
           </div>
 
           <div className="builder-step">
-            <span>3</span>
+            <span>2</span>
             <div><strong>Wskaż okres</strong><small>Aplikacja wyliczy poprawne oznaczenia dokumentu.</small></div>
           </div>
           {frequency === "monthly" ? (

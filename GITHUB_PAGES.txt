@@ -24,4 +24,4 @@ w docs/assets nie przeszkadzają, ponieważ index.html wskazuje aktualną wersj�
 Plik w .github/workflows służy wyłącznie do ręcznego sprawdzenia kompilacji.
 Publikacja strony korzysta z prostszego ustawienia main / docs opisanego wyżej.
 
-Asystent głosowy wymaga aktualnego Chrome lub Edge oraz zgody na mikrofon.
+VIKI jest celowo ukryta w tej wersji aplikacji.

@@ -32,6 +32,7 @@ export type WeekendAssignment = {
 };
 
 export type CleaningWarehouse = "raw" | "finished";
+export type WorkforceArea = CleaningWarehouse;
 export type CleaningFrequency = "daily" | "weekly" | "monthly";
 
 export type CleaningResponsibility = {
@@ -50,6 +51,24 @@ export const workforceStorageKeys = {
   cleaningResponsibilities:
     "warehouse-masterpress:cleaning-responsibilities:production:v1",
 } as const;
+
+export const workforceStorageKeysByArea = {
+  raw: workforceStorageKeys,
+  finished: {
+    employees: "warehouse-masterpress:employees:finished:production:v1",
+    assignments:
+      "warehouse-masterpress:shift-assignments:finished:production:v1",
+    leaves: "warehouse-masterpress:planned-leaves:finished:production:v1",
+    weekendAssignments:
+      "warehouse-masterpress:weekend-assignments:finished:production:v1",
+    cleaningResponsibilities:
+      "warehouse-masterpress:cleaning-responsibilities:finished:production:v1",
+  },
+} as const;
+
+export function workforceUpdateEvent(area: WorkforceArea) {
+  return `warehouse-workforce-updated:${area}`;
+}
 
 export const shifts: ShiftId[] = ["I", "II", "III"];
 

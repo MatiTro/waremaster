@@ -4,6 +4,7 @@ import {
   dateRange,
   formatWorkHours,
   isWeekend,
+  workforceStorageKeysByArea,
 } from "../app/workforce-model.ts";
 
 test("zakres grafiku zawiera obie daty", () => {
@@ -24,4 +25,19 @@ test("indywidualne godziny zachowują zmianę przechodzącą przez północ", ()
   assert.equal(formatWorkHours("10:00", "18:00", true), "10–18");
   assert.equal(formatWorkHours("20:00", "06:00", true), "20–06");
   assert.equal(formatWorkHours("06:30", "18:30", true), "06:30–18:30");
+});
+
+test("grafiki obu magazynów mają oddzielny zapis", () => {
+  assert.notEqual(
+    workforceStorageKeysByArea.raw.employees,
+    workforceStorageKeysByArea.finished.employees,
+  );
+  assert.notEqual(
+    workforceStorageKeysByArea.raw.assignments,
+    workforceStorageKeysByArea.finished.assignments,
+  );
+  assert.notEqual(
+    workforceStorageKeysByArea.raw.cleaningResponsibilities,
+    workforceStorageKeysByArea.finished.cleaningResponsibilities,
+  );
 });

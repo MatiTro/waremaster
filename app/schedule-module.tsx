@@ -32,12 +32,14 @@ import {
   monthDates,
   safeReadArray,
   shifts,
-  workforceStorageKeys,
+  workforceStorageKeysByArea,
+  workforceUpdateEvent,
   type Employee,
   type PlannedLeave,
   type ShiftAssignment,
   type ShiftId,
   type WeekendAssignment,
+  type WorkforceArea,
 } from "./workforce-model";
 
 type ScheduleTab = "planner" | "weekends" | "employees" | "leaves";
@@ -53,9 +55,13 @@ function employeeName(employees: Employee[], id: string) {
     "Nieznany pracownik";
 }
 
-function writeWorkforceData<T>(key: string, value: T[]) {
+function writeWorkforceData<T>(
+  key: string,
+  value: T[],
+  area: WorkforceArea,
+) {
   window.localStorage.setItem(key, JSON.stringify(value));
-  window.dispatchEvent(new Event("warehouse-workforce-updated"));
+  window.dispatchEvent(new Event(workforceUpdateEvent(area)));
 }
 
 function addMonths(month: string, delta: number) {
@@ -65,7 +71,13 @@ function addMonths(month: string, delta: number) {
     String(date.getMonth() + 1).padStart(2, "0");
 }
 
-export function WorkforceSummary() {
+const areaLabels: Record<WorkforceArea, string> = {
+  raw: "Magazyn surowców",
+  finished: "Magazyn wyrobów gotowych",
+};
+
+export function WorkforceSummary({ area = "raw" }: { area?: WorkforceArea }) {
+  const storageKeys = workforceStorageKeysByArea[area];
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [leaves, setLeaves] = useState<PlannedLeave[]>([]);
   const [assignments, setAssignments] = useState<ShiftAssignment[]>([]);
@@ -73,16 +85,17 @@ export function WorkforceSummary() {
 
   useEffect(() => {
     const load = () => {
-      setEmployees(safeReadArray<Employee>(workforceStorageKeys.employees));
-      setLeaves(safeReadArray<PlannedLeave>(workforceStorageKeys.leaves));
+      setEmployees(safeReadArray<Employee>(storageKeys.employees));
+      setLeaves(safeReadArray<PlannedLeave>(storageKeys.leaves));
       setAssignments(
-        safeReadArray<ShiftAssignment>(workforceStorageKeys.assignments),
+        safeReadArray<ShiftAssignment>(storageKeys.assignments),
       );
     };
     load();
-    window.addEventListener("warehouse-workforce-updated", load);
-    return () => window.removeEventListener("warehouse-workforce-updated", load);
-  }, []);
+    const updateEvent = workforceUpdateEvent(area);
+    window.addEventListener(updateEvent, load);
+    return () => window.removeEventListener(updateEvent, load);
+  }, [area, storageKeys]);
 
   const monthlyLeaves = leaves.filter((leave) =>
     leaveOverlapsMonth(leave, month)
@@ -101,7 +114,7 @@ export function WorkforceSummary() {
       <div className="workforce-summary-heading">
         <span><CalendarDays /></span>
         <div>
-          <small>GRAFIK I NIEOBECNOŚCI</small>
+          <small>GRAFIK · {areaLabels[area].toLocaleUpperCase("pl")}</small>
           <h3>{formatMonth(month)}</h3>
         </div>
       </div>
@@ -137,7 +150,8 @@ export function WorkforceSummary() {
   );
 }
 
-export function ScheduleModule() {
+export function ScheduleModule({ area = "raw" }: { area?: WorkforceArea }) {
+  const storageKeys = workforceStorageKeysByArea[area];
   const today = localIsoDate();
   const [ready, setReady] = useState(false);
   const [tab, setTab] = useState<ScheduleTab>("planner");
@@ -168,43 +182,44 @@ export function ScheduleModule() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      setEmployees(safeReadArray<Employee>(workforceStorageKeys.employees));
+      setEmployees(safeReadArray<Employee>(storageKeys.employees));
       setAssignments(
-        safeReadArray<ShiftAssignment>(workforceStorageKeys.assignments),
+        safeReadArray<ShiftAssignment>(storageKeys.assignments),
       );
-      setLeaves(safeReadArray<PlannedLeave>(workforceStorageKeys.leaves));
+      setLeaves(safeReadArray<PlannedLeave>(storageKeys.leaves));
       setWeekendAssignments(
         safeReadArray<WeekendAssignment>(
-          workforceStorageKeys.weekendAssignments,
+          storageKeys.weekendAssignments,
         ),
       );
       setReady(true);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [storageKeys]);
 
   useEffect(() => {
-    if (ready) writeWorkforceData(workforceStorageKeys.employees, employees);
-  }, [employees, ready]);
+    if (ready) writeWorkforceData(storageKeys.employees, employees, area);
+  }, [area, employees, ready, storageKeys]);
 
   useEffect(() => {
     if (ready) {
-      writeWorkforceData(workforceStorageKeys.assignments, assignments);
+      writeWorkforceData(storageKeys.assignments, assignments, area);
     }
-  }, [assignments, ready]);
+  }, [area, assignments, ready, storageKeys]);
 
   useEffect(() => {
-    if (ready) writeWorkforceData(workforceStorageKeys.leaves, leaves);
-  }, [leaves, ready]);
+    if (ready) writeWorkforceData(storageKeys.leaves, leaves, area);
+  }, [area, leaves, ready, storageKeys]);
 
   useEffect(() => {
     if (ready) {
       writeWorkforceData(
-        workforceStorageKeys.weekendAssignments,
+        storageKeys.weekendAssignments,
         weekendAssignments,
+        area,
       );
     }
-  }, [weekendAssignments, ready]);
+  }, [area, ready, storageKeys, weekendAssignments]);
 
   useEffect(() => {
     if (!notice) return;
@@ -653,7 +668,7 @@ export function ScheduleModule() {
     <div className="view-stack workforce-module">
       <section className="view-intro workforce-intro">
         <div>
-          <span>PLANOWANIE ZESPOŁU</span>
+          <span>PLANOWANIE ZESPOŁU · {areaLabels[area]}</span>
           <h2>Grafik pracowników</h2>
           <p>
             Ustaw zmiany w czytelnym arkuszu, zaplanuj weekendy i sprawdź
@@ -1403,7 +1418,7 @@ export function ScheduleModule() {
                   alt="Masterpress"
                   src={import.meta.env.BASE_URL + "masterpress-logo-dark.png"}
                 />
-                <span>WAREHOUSE MASTERPRESS</span>
+                <span>WAREHOUSE MASTERPRESS · {areaLabels[area]}</span>
               </div>
               <div className="schedule-print-heading">
                 <h1>Grafik pracowników</h1>

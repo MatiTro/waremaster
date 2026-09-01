@@ -2,14 +2,13 @@
 
 Firmowa aplikacja magazynowa Masterpress do:
 
-- raportowania dostaw,
-- kontrolowania palet w magazynach A i B,
-- analizowania zapasu według rodzaju surowca,
+- raportowania dostaw surowców i planowania wysyłek wyrobów gotowych,
+- obsługi dwóch niezależnych magazynów w jednym portalu,
+- analizowania zapasu według rodzaju surowca lub wyrobu,
 - przeglądania i filtrowania historii dostaw,
 - generowania kodów tylko dla prawidłowych lokalizacji,
 - układania grafiku zmian i planowania urlopów,
-- tworzenia kart mycia w Wordzie i PDF-ie,
-- obsługi głosowego asystenta VIKI.
+- tworzenia kart mycia w Wordzie i PDF-ie.
 
 ## Uruchomienie na Windows
 
@@ -47,7 +46,10 @@ włączoną na komputerach firmowych. Zatrzymanie aplikacji: `Ctrl+C`.
 
 ## Ważne informacje
 
-- Struktura obu magazynów jest wspólna dla mapy, raportów i generatora kodów.
+- Portal ma dwa niezależne obszary: magazyn surowców oraz magazyn wyrobów
+  gotowych. Każdy ma własne menu, widoki, grafik i dokumentację mycia.
+- Mapa magazynu surowców zachowuje uzgodnioną strukturę. Mapa wyrobów gotowych
+  jest osobnym miejscem i czeka na przekazanie rzeczywistego planu.
 - Aplikacja startuje bez fikcyjnych zapasów, dostawców, dostaw i numerów NI.
 - Do czasu integracji stan lokalizacji jest oznaczony jako „Brak danych”, a nie
   jako wolny lub zajęty.
@@ -61,8 +63,8 @@ włączoną na komputerach firmowych. Zatrzymanie aplikacji: `Ctrl+C`.
   są oznaczone na czerwono.
 - Wydruk grafiku ma układ poziomy i pełnostronicową tabelę: dni są w wierszach,
   a pracownicy w kolumnach.
-- VIKI odczytuje zapisany grafik i odpowiada głosowo o obsadzie, zmianach,
-  pracownikach, urlopach, weekendach i indywidualnych godzinach.
+- VIKI jest celowo wyłączona w tej wersji, aby najpierw dopracować oba obszary
+  operacyjne.
 - Karta mycia obsługuje formularze F-02a, F-02b i F-02c dla magazynu surowców
   oraz magazynu wyrobów gotowych. Dokument Word zawiera aktualne logo firmy.
 - Dane lokalne nie są współdzielone między urządzeniami. Wspólny zapis zapewni

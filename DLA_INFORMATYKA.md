@@ -6,7 +6,7 @@
 - `source/` — kod źródłowy potrzebny do kolejnych aktualizacji,
 - `IIS-web.config.example` — minimalny przykład dla IIS,
 - `nginx-warehouse.conf.example` — przykład konfiguracji Nginx,
-- dokumentację uruchomienia, integracji danych i VIKI.
+- dokumentację uruchomienia oraz integracji danych.
 
 ## Najprostsze uruchomienie testowe w sieci firmowej
 
@@ -27,7 +27,7 @@ do konfiguracji hostingu, certyfikatu i logów.
 - strona otwiera się z laptopa i tabletu pod jednym adresem,
 - logo i ikony są widoczne, a konsola nie zgłasza błędów 404 dla `assets`,
 - PDF grafiku ma jedną stronę A4 w poziomie na każdy zespół pracowników,
-- VIKI może uzyskać zgodę na mikrofon i reaguje na hasło aktywujące,
+- przełącznik rozdziela magazyn surowców i wyrobów gotowych,
 - po aktualizacji `index.html` użytkownik otrzymuje nową wersję strony.
 
 ## Dane wspólne dla wszystkich urządzeń

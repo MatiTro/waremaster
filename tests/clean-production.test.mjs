@@ -18,6 +18,10 @@ const cleaningSource = await readFile(
   new URL("../app/cleaning-module.tsx", import.meta.url),
   "utf8",
 );
+const finishedSource = await readFile(
+  new URL("../app/finished-warehouse.tsx", import.meta.url),
+  "utf8",
+);
 const cleaningWordSource = await readFile(
   new URL("../app/cleaning-word-export.ts", import.meta.url),
   "utf8",
@@ -47,7 +51,7 @@ test("wersja produkcyjna nie generuje fikcyjnych ładunków ani zajętości", ()
   assert.match(modelSource, /export const inventoryDataAvailable = false;/);
 });
 
-test("VIKI jest małym modułem głosowym bez okna czatu i podpowiedzi", () => {
+test("VIKI jest ukryta w wersji budującej dwa obszary pracy", () => {
   for (const forbidden of [
     'className="voice-assistant-panel"',
     'className="voice-result"',
@@ -58,9 +62,20 @@ test("VIKI jest małym modułem głosowym bez okna czatu i podpowiedzi", () => {
   ]) {
     assert.equal(pageSource.includes(forbidden), false, forbidden);
   }
-  assert.match(pageSource, /aria-pressed=\{wakeMode\}/);
-  assert.match(pageSource, /<span>VIKI<\/span>/);
-  assert.match(pageSource, /onClick=\{wakeMode \? stopWakeMode : startWakeMode\}/);
+  assert.equal(pageSource.includes("voice-assistant-trigger"), false);
+  assert.equal(pageSource.includes("<span>VIKI</span>"), false);
+});
+
+test("portal rozdziela magazyn surowców i wyrobów gotowych", () => {
+  assert.match(pageSource, /type WarehouseArea = "raw" \| "finished"/);
+  assert.match(pageSource, /className="warehouse-area-switcher"/);
+  assert.match(pageSource, /const rawNavItems/);
+  assert.match(pageSource, /const finishedNavItems/);
+  assert.match(pageSource, /id: "shipments"/);
+  assert.match(pageSource, /<FinishedMap/);
+  assert.match(finishedSource, /Mapa magazynu wyrobów gotowych/);
+  assert.match(finishedSource, /Brak zaimportowanych stanów wyrobów/);
+  assert.equal(finishedSource.includes("LD-"), false);
 });
 
 test("Grafik ma zwarty arkusz, osobne weekendy i profesjonalny wydruk", () => {
@@ -110,6 +125,8 @@ test("Karta mycia obsługuje trzy formularze, oba magazyny i eksport Word", () =
   assert.match(cleaningSource, /F-02c\/P-H-03/);
   assert.match(cleaningSource, /Magazyn surowców/);
   assert.match(cleaningSource, /Magazyn wyrobów gotowych/);
+  assert.match(cleaningSource, /warehouse: CleaningWarehouse/);
+  assert.equal(cleaningSource.includes("setWarehouse"), false);
   assert.match(cleaningWordSource, /masterpress-logo-dark\.png/);
   assert.match(cleaningWordSource, /Packer\.toBlob/);
 });

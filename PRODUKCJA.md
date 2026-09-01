@@ -15,8 +15,8 @@ Wymagane są:
 - ustawienie `index.html` jako dokumentu domyślnego,
 - wyłączenie długiego cache dla `index.html`, aby aktualizacje były widoczne.
 
-HTTPS jest konieczny dla mikrofonu VIKI. Przeglądarki mogą blokować mikrofon na
-zwykłym adresie `http://adres-ip`; wyjątkiem jest lokalny adres `localhost`.
+HTTPS pozostaje zalecany dla ochrony danych i przyszłych funkcji urządzeń.
+VIKI jest celowo wyłączona w bieżącej wersji interfejsu.
 
 ## Ponowne zbudowanie frontendu
 
@@ -54,4 +54,3 @@ Dział IT powinien przygotować:
 5. Kopie bezpieczeństwa, retencję logów i monitoring dostępności.
 
 Zakres rekordów i proponowanych endpointów opisuje `INTEGRACJA_DANYCH.md`.
-Pełna lista pytań głosowych znajduje się w `SLOWNIK_VIKI.md`.
