@@ -8,7 +8,7 @@ Firmowa aplikacja magazynowa Masterpress do:
 - przeglądania i filtrowania historii dostaw,
 - generowania kodów tylko dla prawidłowych lokalizacji,
 - układania grafiku zmian i planowania urlopów,
-- tworzenia kart mycia w Wordzie i PDF-ie.
+- tworzenia i drukowania kart mycia w PDF-ie.
 
 ## Uruchomienie na Windows
 
@@ -66,7 +66,7 @@ włączoną na komputerach firmowych. Zatrzymanie aplikacji: `Ctrl+C`.
 - VIKI jest celowo wyłączona w tej wersji, aby najpierw dopracować oba obszary
   operacyjne.
 - Karta mycia obsługuje formularze F-02a, F-02b i F-02c dla magazynu surowców
-  oraz magazynu wyrobów gotowych. Dokument Word zawiera aktualne logo firmy.
+  oraz magazynu wyrobów gotowych i generuje wydruk PDF.
 - Dane lokalne nie są współdzielone między urządzeniami. Wspólny zapis zapewni
   baza aplikacji po wykonaniu integracji.
 - Gotowa instrukcja przekazania wdrożenia działowi IT znajduje się w pliku

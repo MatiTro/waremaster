@@ -22,10 +22,6 @@ const finishedSource = await readFile(
   new URL("../app/finished-warehouse.tsx", import.meta.url),
   "utf8",
 );
-const cleaningWordSource = await readFile(
-  new URL("../app/cleaning-word-export.ts", import.meta.url),
-  "utf8",
-);
 const globalStyles = await readFile(
   new URL("../app/globals.css", import.meta.url),
   "utf8",
@@ -75,6 +71,11 @@ test("portal rozdziela magazyn surowców i wyrobów gotowych", () => {
   assert.match(pageSource, /<FinishedMap/);
   assert.match(finishedSource, /Mapa magazynu wyrobów gotowych/);
   assert.match(finishedSource, /Brak zaimportowanych stanów wyrobów/);
+  assert.match(finishedSource, /className="command-hero"/);
+  assert.match(finishedSource, /Indeksy wyrobów/);
+  assert.match(finishedSource, /Palety w blokadzie jakościowej/);
+  assert.equal(finishedSource.includes("Partie gotowe do wydania"), false);
+  assert.equal(finishedSource.includes('["history", "Historia"]'), false);
   assert.equal(finishedSource.includes("LD-"), false);
 });
 
@@ -98,6 +99,8 @@ test("Grafik ma zwarty arkusz, osobne weekendy i profesjonalny wydruk", () => {
   assert.match(scheduleSource, /schedule-custom-hours/);
   assert.match(scheduleSource, /customTo < customFrom/);
   assert.match(scheduleSource, /formatWorkHours/);
+  assert.match(scheduleSource, /WAREHOUSE<br \/>MASTERPRESS/);
+  assert.match(scheduleSource, /<small>\{areaLabels\[area\]\}<\/small>/);
   assert.match(globalStyles, /@page workforce-landscape/);
   assert.match(globalStyles, /size: A4 landscape/);
   assert.match(globalStyles, /workforce-module > \*:not\(\.schedule-print-document\)/);
@@ -118,7 +121,7 @@ test("Dostawy mają tylko dostawcę i liczbę palet, a konfiguracja znika z menu
   assert.equal(deliveryForm.includes('name="notes"'), false);
 });
 
-test("Karta mycia obsługuje trzy formularze, oba magazyny i eksport Word", () => {
+test("Karta mycia obsługuje trzy formularze i osobny obszar magazynu", () => {
   assert.match(pageSource, /id: "cleaning"/);
   assert.match(cleaningSource, /F-02a\/P-H-03/);
   assert.match(cleaningSource, /F-02b\/P-H-03/);
@@ -127,6 +130,6 @@ test("Karta mycia obsługuje trzy formularze, oba magazyny i eksport Word", () =
   assert.match(cleaningSource, /Magazyn wyrobów gotowych/);
   assert.match(cleaningSource, /warehouse: CleaningWarehouse/);
   assert.equal(cleaningSource.includes("setWarehouse"), false);
-  assert.match(cleaningWordSource, /masterpress-logo-dark\.png/);
-  assert.match(cleaningWordSource, /Packer\.toBlob/);
+  assert.equal(cleaningSource.includes("Pobierz Word"), false);
+  assert.equal(cleaningSource.includes("downloadCleaningWord"), false);
 });

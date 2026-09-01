@@ -1,24 +1,25 @@
 "use client";
 
 import {
-  ArrowRight,
+  AlertTriangle,
   BarChart3,
   Boxes,
   CalendarDays,
-  CheckCircle2,
+  ChevronRight,
   ClipboardList,
   Clock3,
   FileDown,
   MapPin,
   PackageCheck,
   Search,
+  Sparkles,
   Truck,
-  Warehouse,
 } from "lucide-react";
 import { useState } from "react";
+import { WorkforceSummary } from "./schedule-module";
 
 type FinishedView = "inventory" | "map" | "shipments" | "schedule";
-type ShipmentTab = "today" | "week" | "history";
+type ShipmentTab = "today" | "week";
 
 export function FinishedDashboard({
   onNavigate,
@@ -27,90 +28,105 @@ export function FinishedDashboard({
 }) {
   return (
     <div className="view-stack finished-dashboard">
-      <section className="finished-hero">
+      <section className="command-hero">
         <div>
-          <span className="finished-eyebrow">
-            <PackageCheck size={16} /> MAGAZYN WYROBÓW GOTOWYCH
+          <span className="hero-label">
+            <Sparkles size={14} /> Szybki dostęp do pracy magazynu
           </span>
-          <h2>Wysyłki pod kontrolą</h2>
+          <h2>Magazyn wyrobów gotowych w jednym miejscu</h2>
           <p>
-            Osobny obszar do obsługi gotowych wyrobów, planu wydań i pracy
-            zespołu. Dane operacyjne pojawią się tutaj po podłączeniu widoku
-            D365.
+            Sprawdź stan wyrobów, przejdź do mapy, otwórz plan wysyłek albo
+            uzupełnij grafik zespołu.
           </p>
-          <div className="finished-hero-actions">
-            <button
-              className="primary-button"
-              onClick={() => onNavigate("shipments")}
-              type="button"
-            >
-              <Truck /> Otwórz wysyłki <ArrowRight />
-            </button>
-            <button
-              className="secondary-button"
-              onClick={() => onNavigate("inventory")}
-              type="button"
-            >
-              <BarChart3 /> Raport wyrobów
-            </button>
-          </div>
-        </div>
-        <div className="finished-hero-mark" aria-hidden="true">
-          <Warehouse />
-          <span>WG</span>
         </div>
       </section>
 
-      <section className="finished-kpi-grid" aria-label="Wskaźniki wysyłek">
-        {[
-          ["Wysyłki dzisiaj", Truck],
-          ["Palety do wydania", Boxes],
-          ["Gotowe ładunki", CheckCircle2],
-          ["Wymagają uwagi", Clock3],
-        ].map(([label, Icon]) => (
-          <article key={String(label)}>
-            <span><Icon /></span>
-            <div><strong>—</strong><small>{String(label)}</small></div>
-          </article>
-        ))}
+      <WorkforceSummary area="finished" />
+
+      <section className="kpi-grid" aria-label="Wskaźniki magazynu wyrobów gotowych">
+        <article className="metric-card metric-primary">
+          <div><span>Palety wyrobów</span><Boxes /></div>
+          <strong>—</strong>
+          <p>Oczekiwanie na dane magazynowe</p>
+        </article>
+        <article className="metric-card">
+          <div><span>Wysyłki dzisiaj</span><Truck /></div>
+          <strong>—<small> wysyłek</small></strong>
+          <p>Plan zostanie pobrany z D365</p>
+        </article>
+        <article className="metric-card">
+          <div><span>W przygotowaniu</span><Clock3 /></div>
+          <strong>—<small> ładunków</small></strong>
+          <p>Oczekiwanie na statusy ładunków</p>
+        </article>
+        <article className="metric-card">
+          <div><span>Gotowe</span><PackageCheck /></div>
+          <strong>—<small> ładunków</small></strong>
+          <p>Gotowe do wydania przewoźnikowi</p>
+        </article>
       </section>
 
-      <section className="finished-dashboard-grid">
-        <article className="panel finished-operation-panel">
+      <section className="quick-grid">
+        <button onClick={() => onNavigate("inventory")} type="button">
+          <span className="quick-icon"><BarChart3 /></span>
+          <span>
+            <small>Zestawienie magazynowe</small>
+            <strong>Sprawdź stan wyrobów</strong>
+            <em>Palety, indeksy i blokady jakościowe</em>
+          </span>
+          <ChevronRight />
+        </button>
+        <button onClick={() => onNavigate("shipments")} type="button">
+          <span className="quick-icon"><Truck /></span>
+          <span>
+            <small>Plan operacyjny</small>
+            <strong>Otwórz wysyłki</strong>
+            <em>Dzisiaj i plan całego tygodnia</em>
+          </span>
+          <ChevronRight />
+        </button>
+        <button onClick={() => onNavigate("schedule")} type="button">
+          <span className="quick-icon"><CalendarDays /></span>
+          <span>
+            <small>Organizacja zespołu</small>
+            <strong>Przejdź do grafiku</strong>
+            <em>Zmiany, weekendy i zaplanowane urlopy</em>
+          </span>
+          <ChevronRight />
+        </button>
+      </section>
+
+      <section className="dashboard-grid">
+        <article className="panel stock-overview">
           <div className="panel-heading">
             <div>
-              <span>PLAN OPERACYJNY</span>
+              <span>PLAN WYSYŁEK</span>
               <h3>Najbliższe wysyłki</h3>
             </div>
             <button
-              className="text-button"
               onClick={() => onNavigate("shipments")}
               type="button"
             >
-              Pełny plan <ArrowRight />
+              Pełny widok <ChevronRight />
             </button>
           </div>
-          <div className="finished-empty-state compact">
-            <CalendarDays />
-            <div>
-              <strong>Plan czeka na dane</strong>
-              <p>
-                Po integracji pokażemy kolejność wysyłek, klientów, okna
-                czasowe i gotowość ładunków.
-              </p>
-            </div>
+          <div className="empty-report-state">
+            <strong>Brak danych o wysyłkach</strong>
+            <span>Plan dzienny i tygodniowy pojawi się po podłączeniu D365.</span>
           </div>
         </article>
 
-        <article className="panel finished-readiness-panel">
+        <article className="panel activity-panel">
           <div className="panel-heading">
-            <div><span>GOTOWOŚĆ</span><h3>Status obszaru</h3></div>
+            <div><span>KONTROLA JAKOŚCI</span><h3>Blokady i wyjątki</h3></div>
+            <span className="status-badge info">Dane D365</span>
           </div>
-          <ul>
-            <li><span><ClipboardList /></span><div><strong>Plan wysyłek</strong><small>Oczekuje na dane D365</small></div><i /></li>
-            <li><span><Boxes /></span><div><strong>Wyroby na lokalizacjach</strong><small>Oczekuje na mapę magazynu</small></div><i /></li>
-            <li><span><PackageCheck /></span><div><strong>Gotowość ładunków</strong><small>Oczekuje na reguły biznesowe</small></div><i /></li>
-          </ul>
+          <div className="activity-list">
+            <div className="empty-report-state">
+              <strong>Brak danych o blokadach</strong>
+              <span>Palety na lokalizacji blokady jakościowej pojawią się tutaj.</span>
+            </div>
+          </div>
         </article>
       </section>
     </div>
@@ -125,8 +141,8 @@ export function FinishedInventory() {
           <span>MAGAZYN WYROBÓW GOTOWYCH</span>
           <h2>Raport zapasów</h2>
           <p>
-            Widok przeznaczony wyłącznie dla wyrobów gotowych — z partiami,
-            paletami, lokalizacją oraz gotowością do wysyłki.
+            Widok przeznaczony wyłącznie dla wyrobów gotowych — z indeksami,
+            partiami, paletami, lokalizacją oraz blokadą jakościową.
           </p>
         </div>
         <button className="secondary-button" disabled type="button">
@@ -137,9 +153,9 @@ export function FinishedInventory() {
       <section className="finished-kpi-grid">
         {[
           ["Palety wyrobów", Boxes],
-          ["Pozycje asortymentowe", ClipboardList],
-          ["Partie gotowe do wydania", PackageCheck],
-          ["Zablokowane", Clock3],
+          ["Indeksy wyrobów", ClipboardList],
+          ["Wolne miejsca", MapPin],
+          ["Palety w blokadzie jakościowej", AlertTriangle],
         ].map(([label, Icon]) => (
           <article key={String(label)}>
             <span><Icon /></span>
@@ -160,7 +176,7 @@ export function FinishedInventory() {
           <table className="finished-table">
             <thead>
               <tr>
-                <th>Nr pozycji</th><th>Nazwa wyrobu</th><th>Partia</th>
+                <th>Indeks / nr pozycji</th><th>Nazwa wyrobu</th><th>Partia</th>
                 <th>Palety</th><th>Lokalizacja</th><th>Status</th>
               </tr>
             </thead>
@@ -226,7 +242,6 @@ export function ShipmentsModule() {
   const labels: Record<ShipmentTab, string> = {
     today: "dzisiaj",
     week: "w tym tygodniu",
-    history: "w historii",
   };
 
   return (
@@ -261,7 +276,6 @@ export function ShipmentsModule() {
           {([
             ["today", "Dzisiaj"],
             ["week", "Plan tygodnia"],
-            ["history", "Historia"],
           ] as [ShipmentTab, string][]).map(([id, label]) => (
             <button
               className={tab === id ? "active" : ""}

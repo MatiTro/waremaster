@@ -4135,12 +4135,7 @@ export default function Home() {
         )}
 
         {warehouseArea === "finished" && activeView === "dashboard" && (
-          <>
-            <FinishedDashboard onNavigate={navigate} />
-            <div className="view-stack finished-workforce-summary">
-              <WorkforceSummary area="finished" />
-            </div>
-          </>
+          <FinishedDashboard onNavigate={navigate} />
         )}
 
         {warehouseArea === "finished" && activeView === "inventory" && (

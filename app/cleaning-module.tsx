@@ -2,9 +2,7 @@
 
 import {
   CalendarRange,
-  CheckCircle2,
   ClipboardCheck,
-  Download,
   FileDown,
   Printer,
   Users,
@@ -104,8 +102,6 @@ export function CleaningModule({
   const [responsibilities, setResponsibilities] = useState<
     CleaningResponsibility[]
   >([]);
-  const [notice, setNotice] = useState<string | null>(null);
-  const [wordBusy, setWordBusy] = useState(false);
   const [printMode, setPrintMode] = useState<"card" | "plan" | null>(null);
 
   useEffect(() => {
@@ -132,12 +128,6 @@ export function CleaningModule({
       JSON.stringify(responsibilities),
     );
   }, [ready, responsibilities, storageKeys]);
-
-  useEffect(() => {
-    if (!notice) return;
-    const timer = window.setTimeout(() => setNotice(null), 4500);
-    return () => window.clearTimeout(timer);
-  }, [notice]);
 
   useEffect(() => {
     const finish = () => setPrintMode(null);
@@ -231,31 +221,6 @@ export function CleaningModule({
     window.setTimeout(() => window.print(), 80);
   }
 
-  async function exportWord() {
-    setWordBusy(true);
-    try {
-      const { downloadCleaningWord } = await import("./cleaning-word-export");
-      const safeArea = warehouse === "raw" ? "Surowce" : "Wyroby-gotowe";
-      const safePeriod = frequency === "monthly"
-        ? selectedMonth
-        : selectedWeek.replace("-W", "-T");
-      await downloadCleaningWord({
-        title: `Karta mycia i dezynfekcji (w układzie ${frequencyLabel(frequency)})`,
-        formCode: formCodes[frequency],
-        area: warehouseLabels[warehouse],
-        periodLabel,
-        responsible: selectedResponsible,
-        rows: cardRows,
-        fileName: `Karta-mycia-${safeArea}-${safePeriod}.docx`,
-      });
-      setNotice("Dokument Word został utworzony z aktualnym logo Masterpress.");
-    } catch {
-      setNotice("Nie udało się utworzyć dokumentu Word. Spróbuj ponownie.");
-    } finally {
-      setWordBusy(false);
-    }
-  }
-
   return (
     <div className="view-stack cleaning-module">
       <section className="view-intro cleaning-intro">
@@ -268,12 +233,6 @@ export function CleaningModule({
           </p>
         </div>
       </section>
-
-      {notice && (
-        <div aria-live="polite" className="module-notice" role="status">
-          <CheckCircle2 /> <span>{notice}</span>
-        </div>
-      )}
 
       <section className="cleaning-builder-grid">
         <article className="panel cleaning-builder">
@@ -324,9 +283,6 @@ export function CleaningModule({
           </div>
 
           <div className="cleaning-actions">
-            <button className="secondary-button" disabled={wordBusy} onClick={exportWord} type="button">
-              <Download /> {wordBusy ? "Tworzę Word…" : "Pobierz Word"}
-            </button>
             <button className="primary-button" onClick={() => printDocument("card")} type="button">
               <FileDown /> Drukuj / zapisz PDF
             </button>
