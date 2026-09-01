@@ -592,11 +592,14 @@ function LoginScreen({
   return (
     <main className="login-screen">
       <section className="login-brand-panel">
+        <div
+          aria-hidden="true"
+          className="login-warehouse-backdrop"
+          style={{
+            backgroundImage: `url(${import.meta.env.BASE_URL}warehouse-login-bg.svg)`,
+          }}
+        />
         <div className="login-brand-glow" />
-        <div className="login-scan-line" />
-        <div aria-hidden="true" className="login-orbit">
-          <i /><i /><i />
-        </div>
         <div className="login-brand-lockup">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -605,42 +608,40 @@ function LoginScreen({
           />
         </div>
         <div className="login-brand-copy">
-          <span>CENTRUM OPERACJI MAGAZYNOWYCH</span>
           <h1>
-            Każda operacja.<br />
-            <em>Jedno miejsce.</em>
+            Magazyn w dobrym<br />
+            <em>rytmie.</em>
           </h1>
           <p>
-            Wspólne środowisko dla lokalizacji, przepływu towaru i pracy zespołu.
-            Aktualna informacja zawsze tam, gdzie jest potrzebna.
+            Dostawy, lokalizacje, wysyłki i praca zespołu — uporządkowane
+            w jednym systemie.
           </p>
         </div>
         <div className="login-capability-strip">
           <article>
-            <span><MapPin /></span>
-            <div><small>01</small><strong>Lokalizacje</strong></div>
-          </article>
-          <article>
             <span><Truck /></span>
-            <div><small>02</small><strong>Przepływ towaru</strong></div>
+            <div><small>01</small><strong>Dostawy</strong></div>
           </article>
           <article>
-            <span><CalendarDays /></span>
-            <div><small>03</small><strong>Zespół i plan</strong></div>
+            <span><MapPin /></span>
+            <div><small>02</small><strong>Lokalizacje</strong></div>
+          </article>
+          <article>
+            <span><PackageCheck /></span>
+            <div><small>03</small><strong>Wysyłki</strong></div>
           </article>
         </div>
         <div className="login-brand-status">
           <i />
-          <span>Warehouse Masterpress · środowisko testowe</span>
+          <span>System magazynowy Masterpress</span>
         </div>
       </section>
 
       <section className="login-form-panel">
         <div className="login-form-wrap">
-          <div className="login-form-accent"><span /><span /><span /></div>
           <header>
             <span className="login-eyebrow"><LockKeyhole /> DOSTĘP DO SYSTEMU</span>
-            <h2>Witaj ponownie</h2>
+            <h2>Witaj</h2>
             <p>Zaloguj się do swojego obszaru operacyjnego.</p>
           </header>
 
@@ -673,7 +674,7 @@ function LoginScreen({
             </label>
             {error && <p aria-live="polite" className="login-error">{error}</p>}
             <button className="login-submit" type="submit">
-              Zaloguj do Warehouse Masterpress <ChevronRight />
+              Przejdź do systemu <ChevronRight />
             </button>
           </form>
 

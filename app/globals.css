@@ -830,6 +830,200 @@
   }
 }
 
+/* Logowanie v3 — premium magazyn i logistyka, bez motywu futurystycznego */
+.login-brand-panel {
+  position: relative;
+  background: #002855;
+}
+.login-brand-panel::before,
+.login-brand-panel::after,
+.login-brand-glow,
+.login-form-panel::before {
+  display: none;
+}
+.login-warehouse-backdrop {
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  filter: saturate(0.84) contrast(1.03);
+  transform: scale(1.015);
+}
+.login-warehouse-backdrop::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background:
+    linear-gradient(90deg, rgba(0, 22, 46, 0.97) 0%, rgba(0, 31, 63, 0.82) 42%, rgba(0, 34, 68, 0.34) 76%, rgba(0, 25, 51, 0.57) 100%),
+    linear-gradient(0deg, rgba(0, 19, 39, 0.84) 0%, transparent 52%, rgba(0, 20, 42, 0.38) 100%);
+}
+.login-brand-lockup {
+  position: relative;
+  z-index: 2;
+}
+.login-brand-copy {
+  max-width: 670px;
+  margin-bottom: 34px;
+  padding-top: 64px;
+}
+.login-brand-copy h1 {
+  margin: 0 0 21px;
+  font-size: clamp(50px, 5.25vw, 80px);
+  line-height: 0.97;
+  text-shadow: 0 10px 45px rgba(0, 17, 35, 0.42);
+}
+.login-brand-copy h1 em {
+  color: #9edcff;
+  text-shadow: 0 7px 35px rgba(28, 126, 182, 0.28);
+}
+.login-brand-copy p {
+  max-width: 575px;
+  color: rgba(244, 250, 254, 0.77);
+  font-size: clamp(12px, 1vw, 15px);
+  line-height: 1.65;
+  text-shadow: 0 3px 16px rgba(0, 19, 39, 0.4);
+}
+.login-capability-strip {
+  max-width: 660px;
+  margin-bottom: 24px;
+}
+.login-capability-strip article {
+  min-height: 67px;
+  background: rgba(0, 26, 53, 0.66);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 12px 28px rgba(0, 16, 34, 0.15);
+  backdrop-filter: blur(14px);
+}
+.login-capability-strip article > span {
+  color: #a9e1ff;
+  background: rgba(119, 205, 250, 0.11);
+  border: 1px solid rgba(142, 218, 255, 0.12);
+}
+.login-capability-strip small {
+  color: #efb640;
+}
+.login-brand-status {
+  color: rgba(255, 255, 255, 0.72);
+}
+.login-brand-status i {
+  background: #efb640;
+  box-shadow: 0 0 0 5px rgba(239, 182, 64, 0.13);
+}
+.login-form-panel {
+  background:
+    linear-gradient(115deg, rgba(221, 231, 237, 0.58), transparent 42%),
+    #eef3f6;
+}
+.login-form-wrap {
+  overflow: hidden;
+  padding: clamp(32px, 3.2vw, 46px);
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid #d9e3e9;
+  border-radius: 18px;
+  box-shadow:
+    0 34px 85px rgba(0, 40, 85, 0.14),
+    0 1px 0 white inset;
+}
+.login-form-wrap::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  content: "";
+  background: linear-gradient(180deg, #126fae 0 72%, #efb640 72% 100%);
+}
+.login-form-wrap > header {
+  margin-bottom: 29px;
+}
+.login-form-wrap h2 {
+  margin-top: 13px;
+  font-size: 40px;
+}
+.login-form-wrap > header p {
+  font-size: 11px;
+}
+.login-input {
+  background: white;
+  border-color: #cedbe3;
+}
+.login-input:focus-within {
+  border-color: #277bad;
+  box-shadow: 0 0 0 4px rgba(35, 106, 162, 0.08);
+}
+.login-submit {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(120deg, #002855 0%, #075f96 100%);
+}
+.login-submit::after {
+  position: absolute;
+  width: 80px;
+  height: 120%;
+  top: -10%;
+  left: -110px;
+  content: "";
+  opacity: 0.24;
+  background: linear-gradient(90deg, transparent, white, transparent);
+  transform: skewX(-18deg);
+  transition: left 0.55s ease;
+}
+.login-submit:hover::after {
+  left: calc(100% + 30px);
+}
+.login-test-accounts > button {
+  background: #f6f9fa;
+  border-color: #d9e3e9;
+}
+.login-test-accounts > button:hover {
+  border-color: #8db4cb;
+  box-shadow: 0 7px 18px rgba(0, 40, 85, 0.06);
+}
+
+@media (max-width: 1180px) {
+  .login-capability-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-width: 600px;
+  }
+  .login-capability-strip article {
+    min-height: 62px;
+  }
+}
+
+@media (max-width: 820px) {
+  .login-brand-copy h1 {
+    font-size: 46px;
+  }
+  .login-capability-strip {
+    grid-template-columns: 1fr;
+    max-width: 290px;
+  }
+  .login-capability-strip article {
+    min-height: 52px;
+  }
+  .login-capability-strip article:nth-child(n + 3) {
+    display: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .login-warehouse-backdrop {
+    background-position: 45% center;
+  }
+  .login-warehouse-backdrop::after {
+    background: linear-gradient(90deg, rgba(0, 25, 52, 0.91), rgba(0, 35, 70, 0.52));
+  }
+  .login-brand-copy h1 {
+    font-size: 35px;
+  }
+  .login-form-wrap {
+    border-radius: 14px;
+  }
+  .login-form-wrap h2 {
+    font-size: 32px;
+  }
+}
+
 /* Tablica zmianowa, dokumentacja i stały nagłówek mapy */
 .fixed-map-object {
   min-height: 44px;
@@ -11984,5 +12178,178 @@ footer {
   }
   .pallet-count-print-document.print-active .pallet-count-report > footer {
     display: flex !important;
+  }
+}
+
+/* Ostateczny motyw logowania — nowoczesna hala magazynowa */
+.login-brand-panel {
+  position: relative;
+  background: #002855;
+}
+.login-brand-panel::before,
+.login-brand-panel::after,
+.login-brand-glow,
+.login-form-panel::before {
+  display: none;
+}
+.login-warehouse-backdrop {
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  filter: saturate(0.84) contrast(1.03);
+  transform: scale(1.015);
+}
+.login-warehouse-backdrop::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background:
+    linear-gradient(90deg, rgba(0, 22, 46, 0.97) 0%, rgba(0, 31, 63, 0.82) 42%, rgba(0, 34, 68, 0.34) 76%, rgba(0, 25, 51, 0.57) 100%),
+    linear-gradient(0deg, rgba(0, 19, 39, 0.84) 0%, transparent 52%, rgba(0, 20, 42, 0.38) 100%);
+}
+.login-brand-lockup,
+.login-brand-copy,
+.login-capability-strip,
+.login-brand-status {
+  position: relative;
+  z-index: 2;
+}
+.login-brand-lockup {
+  justify-content: flex-start;
+}
+.login-brand-lockup img {
+  width: clamp(245px, 25vw, 340px);
+  height: auto;
+  max-height: 82px;
+  object-fit: contain;
+  object-position: left center;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+.login-brand-copy {
+  max-width: 670px;
+  margin: auto 0 34px;
+  padding: 64px 0 30px;
+}
+.login-brand-copy h1 {
+  margin: 0 0 21px;
+  font-size: clamp(50px, 5.25vw, 80px);
+  line-height: 0.97;
+  text-shadow: 0 10px 45px rgba(0, 17, 35, 0.42);
+}
+.login-brand-copy h1 em {
+  color: #9edcff;
+  font-style: normal;
+  text-shadow: 0 7px 35px rgba(28, 126, 182, 0.28);
+}
+.login-brand-copy p {
+  max-width: 575px;
+  color: rgba(244, 250, 254, 0.77);
+  font-size: clamp(12px, 1vw, 15px);
+  line-height: 1.65;
+  text-shadow: 0 3px 16px rgba(0, 19, 39, 0.4);
+}
+.login-capability-strip {
+  max-width: 660px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 24px;
+}
+.login-capability-strip article {
+  min-height: 67px;
+  background: rgba(0, 26, 53, 0.66);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 12px 28px rgba(0, 16, 34, 0.15);
+  backdrop-filter: blur(14px);
+}
+.login-capability-strip article > span {
+  color: #a9e1ff;
+  background: rgba(119, 205, 250, 0.11);
+  border: 1px solid rgba(142, 218, 255, 0.12);
+}
+.login-capability-strip small {
+  color: #efb640;
+}
+.login-brand-status {
+  color: rgba(255, 255, 255, 0.72);
+}
+.login-brand-status i {
+  background: #efb640;
+  box-shadow: 0 0 0 5px rgba(239, 182, 64, 0.13);
+}
+.login-form-panel {
+  background:
+    linear-gradient(115deg, rgba(221, 231, 237, 0.58), transparent 42%),
+    #eef3f6;
+}
+.login-form-wrap {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(32px, 3.2vw, 46px);
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid #d9e3e9;
+  border-radius: 18px;
+  box-shadow: 0 34px 85px rgba(0, 40, 85, 0.14);
+}
+.login-form-wrap::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  content: "";
+  background: linear-gradient(180deg, #126fae 0 72%, #efb640 72% 100%);
+}
+.login-form-wrap > header {
+  margin-bottom: 29px;
+}
+.login-form-wrap h2 {
+  margin-top: 13px;
+  font-size: 40px;
+}
+.login-input {
+  background: white;
+  border-color: #cedbe3;
+}
+.login-submit {
+  background: linear-gradient(120deg, #002855 0%, #075f96 100%);
+}
+.login-test-accounts > button {
+  background: #f6f9fa;
+  border-color: #d9e3e9;
+}
+
+@media (max-width: 820px) {
+  .login-brand-copy h1 {
+    font-size: 46px;
+  }
+  .login-capability-strip {
+    grid-template-columns: 1fr;
+    max-width: 290px;
+  }
+  .login-capability-strip article {
+    min-height: 52px;
+  }
+  .login-capability-strip article:nth-child(n + 3) {
+    display: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .login-warehouse-backdrop {
+    background-position: 45% center;
+  }
+  .login-warehouse-backdrop::after {
+    background: linear-gradient(90deg, rgba(0, 25, 52, 0.91), rgba(0, 35, 70, 0.52));
+  }
+  .login-brand-copy h1 {
+    font-size: 35px;
+  }
+  .login-form-wrap {
+    border-radius: 14px;
+  }
+  .login-form-wrap h2 {
+    font-size: 32px;
   }
 }

@@ -105,8 +105,17 @@ test("wersja GitHub Pages rozdziela konto lidera i magazyniera", async () => {
   assert.match(pageSource, /stored\.role === "warehouse_worker" \? "shiftboard" : "dashboard"/);
   assert.match(pageSource, /className="login-screen"/);
   assert.match(pageSource, /masterpress-login-logo\.png/);
-  assert.match(pageSource, /Każda operacja/);
+  assert.match(pageSource, /warehouse-login-bg\.svg/);
+  assert.match(pageSource, /Magazyn w dobrym/);
+  assert.match(pageSource, /<h2>Witaj<\/h2>/);
   assert.match(pageSource, /className="login-capability-strip"/);
+  assert.match(pageSource, /<strong>Dostawy<\/strong>/);
+  assert.match(pageSource, /<strong>Lokalizacje<\/strong>/);
+  assert.match(pageSource, /<strong>Wysyłki<\/strong>/);
+  assert.equal(pageSource.includes("Witaj ponownie"), false);
+  assert.equal(pageSource.includes("CENTRUM OPERACJI MAGAZYNOWYCH"), false);
+  assert.equal(pageSource.includes('className="login-orbit"'), false);
+  assert.equal(pageSource.includes('className="login-scan-line"'), false);
   assert.equal(pageSource.includes("przygotowanym do pracy na tablecie"), false);
   assert.match(pageSource, /Warehouse Masterpress/);
   assert.match(pageSource, /Wersja demonstracyjna GitHub Pages/);
@@ -117,6 +126,11 @@ test("wersja GitHub Pages rozdziela konto lidera i magazyniera", async () => {
     import.meta.url,
   ));
   assert.ok(loginLogo.size > 10_000);
+  const warehouseBackdrop = await stat(new URL(
+    "../public/warehouse-login-bg.svg",
+    import.meta.url,
+  ));
+  assert.ok(warehouseBackdrop.size > 5_000);
 });
 
 test("portal rozdziela magazyn surowców i wyrobów gotowych", () => {
