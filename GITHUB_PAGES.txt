@@ -24,4 +24,13 @@ w docs/assets nie przeszkadzają, ponieważ index.html wskazuje aktualną wersj�
 Plik w .github/workflows służy wyłącznie do ręcznego sprawdzenia kompilacji.
 Publikacja strony korzysta z prostszego ustawienia main / docs opisanego wyżej.
 
-VIKI jest celowo ukryta w tej wersji aplikacji.
+KONTA TESTOWE
+
+Lider:       login lider, hasło lider
+Magazynier:  login magazynier, hasło magazynier
+
+Są to konta demonstracyjne statycznej strony GitHub Pages. Docelowe logowanie
+i zabezpieczenie danych musi działać po stronie serwera.
+
+VIKI jest dostępna jako mały przycisk mikrofonu. Po kliknięciu wymaga zgody
+przeglądarki na mikrofon i czuwa na hasło „VIKI”.

@@ -8,8 +8,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock3,
+  Eye,
   FileDown,
+  History,
   Plus,
+  Save,
   Trash2,
   Umbrella,
   UserRoundPlus,
@@ -42,10 +45,19 @@ import {
   type WorkforceArea,
 } from "./workforce-model";
 
-type ScheduleTab = "planner" | "weekends" | "employees" | "leaves";
+type ScheduleTab = "planner" | "weekends" | "employees" | "leaves" | "history";
 type NoticeTone = "success" | "warning" | "danger";
 type ModuleNotice = { message: string; tone: NoticeTone };
 type SelectedCell = { date: string; employeeId: string };
+type ScheduleHistoryRecord = {
+  id: string;
+  month: string;
+  savedAt: string;
+  employees: Employee[];
+  assignments: ShiftAssignment[];
+  leaves: PlannedLeave[];
+  weekendAssignments: WeekendAssignment[];
+};
 
 const shiftNumber: Record<ShiftId, string> = { I: "1", II: "2", III: "3" };
 const weekdayLabels = ["Pon", "Wt", "Śr", "Czw", "Pt", "Sob", "Nie"];
@@ -71,9 +83,24 @@ function addMonths(month: string, delta: number) {
     String(date.getMonth() + 1).padStart(2, "0");
 }
 
+function formatSavedAt(value: string) {
+  return new Intl.DateTimeFormat("pl-PL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
 const areaLabels: Record<WorkforceArea, string> = {
   raw: "Magazyn surowców",
   finished: "Magazyn wyrobów gotowych",
+};
+
+const scheduleHistoryKeys: Record<WorkforceArea, string> = {
+  raw: "warehouse-masterpress:schedule-history:raw:v1",
+  finished: "warehouse-masterpress:schedule-history:finished:v1",
 };
 
 export function WorkforceSummary({ area = "raw" }: { area?: WorkforceArea }) {
@@ -179,6 +206,8 @@ export function ScheduleModule({ area = "raw" }: { area?: WorkforceArea }) {
   const [weekendTo, setWeekendTo] = useState("16:00");
   const [notice, setNotice] = useState<ModuleNotice | null>(null);
   const [printActive, setPrintActive] = useState(false);
+  const [scheduleHistory, setScheduleHistory] = useState<ScheduleHistoryRecord[]>([]);
+  const [historyPreview, setHistoryPreview] = useState<ScheduleHistoryRecord | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -192,10 +221,13 @@ export function ScheduleModule({ area = "raw" }: { area?: WorkforceArea }) {
           storageKeys.weekendAssignments,
         ),
       );
+      setScheduleHistory(
+        safeReadArray<ScheduleHistoryRecord>(scheduleHistoryKeys[area]),
+      );
       setReady(true);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [storageKeys]);
+  }, [area, storageKeys]);
 
   useEffect(() => {
     if (ready) writeWorkforceData(storageKeys.employees, employees, area);
@@ -254,6 +286,22 @@ export function ScheduleModule({ area = "raw" }: { area?: WorkforceArea }) {
   );
   const monthlyWeekendAssignments = weekendAssignments.filter((assignment) =>
     assignment.date.startsWith(selectedMonth)
+  );
+  const scheduledDayCount = new Set(
+    monthlyAssignments.map((assignment) => assignment.date),
+  ).size;
+  const previousMonth = addMonths(selectedMonth, -1);
+  const previousAssignments = assignments.filter((assignment) =>
+    assignment.date.startsWith(previousMonth)
+  );
+  const previousWeekendAssignments = weekendAssignments.filter((assignment) =>
+    assignment.date.startsWith(previousMonth)
+  );
+  const previousLeaves = leaves.filter((leave) =>
+    leaveOverlapsMonth(leave, previousMonth)
+  );
+  const sortedScheduleHistory = [...scheduleHistory].sort((a, b) =>
+    b.savedAt.localeCompare(a.savedAt)
   );
   const weekendDates = useMemo(() => dates.filter(isWeekend), [dates]);
   const calendarLeadingDays = useMemo(() => {
@@ -664,6 +712,72 @@ export function ScheduleModule({ area = "raw" }: { area?: WorkforceArea }) {
     window.setTimeout(() => window.print(), 80);
   }
 
+  function saveScheduleVersion() {
+    const record: ScheduleHistoryRecord = {
+      id: makeRecordId("SCH"),
+      month: selectedMonth,
+      savedAt: new Date().toISOString(),
+      employees: activeEmployees.map((employee) => ({ ...employee })),
+      assignments: monthlyAssignments.map((assignment) => ({ ...assignment })),
+      leaves: monthlyLeaves.map((leave) => ({ ...leave })),
+      weekendAssignments: monthlyWeekendAssignments.map((assignment) => ({
+        ...assignment,
+      })),
+    };
+    const next = [record, ...scheduleHistory].slice(0, 48);
+    setScheduleHistory(next);
+    window.localStorage.setItem(scheduleHistoryKeys[area], JSON.stringify(next));
+    setNotice({
+      message: `Zapisano wersję grafiku: ${formatMonth(selectedMonth)}.`,
+      tone: "success",
+    });
+  }
+
+  function deleteScheduleVersion(id: string) {
+    const next = scheduleHistory.filter((record) => record.id !== id);
+    setScheduleHistory(next);
+    window.localStorage.setItem(scheduleHistoryKeys[area], JSON.stringify(next));
+  }
+
+  function historyMark(
+    record: ScheduleHistoryRecord,
+    date: string,
+    employeeId: string,
+  ) {
+    const leave = record.leaves.some((item) =>
+      item.employeeId === employeeId && leaveIncludesDate(item, date)
+    );
+    if (leave) return { value: "U", detail: "Urlop", tone: "leave" };
+    const weekend = record.weekendAssignments.find((item) =>
+      item.employeeId === employeeId && item.date === date
+    );
+    if (weekend) {
+      return {
+        value: "W",
+        detail: weekend.fromTime + "–" + weekend.toTime,
+        tone: "weekend-work",
+      };
+    }
+    const assignment = record.assignments.find((item) =>
+      item.employeeId === employeeId && item.date === date
+    );
+    if (assignment?.fromTime && assignment.toTime) {
+      return {
+        value: formatWorkHours(assignment.fromTime, assignment.toTime, true),
+        detail: formatWorkHours(assignment.fromTime, assignment.toTime),
+        tone: "custom-hours",
+      };
+    }
+    if (assignment?.shift) {
+      return {
+        value: shiftNumber[assignment.shift],
+        detail: "Zmiana " + shiftNumber[assignment.shift],
+        tone: "shift-" + shiftNumber[assignment.shift],
+      };
+    }
+    return { value: "", detail: "Brak przypisania", tone: "empty" };
+  }
+
   return (
     <div className="view-stack workforce-module">
       <section className="view-intro workforce-intro">
@@ -675,13 +789,22 @@ export function ScheduleModule({ area = "raw" }: { area?: WorkforceArea }) {
             urlopy.
           </p>
         </div>
-        <button
-          className="primary-button"
-          onClick={printSchedule}
-          type="button"
-        >
-          <FileDown /> Drukuj / zapisz PDF
-        </button>
+        <div className="schedule-intro-actions">
+          <button
+            className="secondary-button"
+            onClick={saveScheduleVersion}
+            type="button"
+          >
+            <Save /> Zapisz wersję
+          </button>
+          <button
+            className="primary-button"
+            onClick={printSchedule}
+            type="button"
+          >
+            <FileDown /> Drukuj / zapisz PDF
+          </button>
+        </div>
       </section>
 
       {notice && (
@@ -706,7 +829,7 @@ export function ScheduleModule({ area = "raw" }: { area?: WorkforceArea }) {
         <article>
           <span><CalendarDays /></span>
           <div>
-            <strong>{monthlyAssignments.length}</strong>
+            <strong>{scheduledDayCount}</strong>
             <small>dni ze zmianą</small>
           </div>
         </article>
@@ -732,14 +855,30 @@ export function ScheduleModule({ area = "raw" }: { area?: WorkforceArea }) {
             <span>KOMUNIKATY GRAFIKU</span>
             <h3>{formatMonth(selectedMonth)}</h3>
           </div>
-          <label className="month-control">
-            <span>Miesiąc grafiku</span>
-            <input
-              onChange={(event) => changeMonth(event.target.value)}
-              type="month"
-              value={selectedMonth}
-            />
-          </label>
+          <div className="month-control-wrap">
+            <button
+              aria-label="Poprzedni miesiąc grafiku"
+              onClick={() => changeMonth(addMonths(selectedMonth, -1))}
+              type="button"
+            >
+              <ChevronLeft />
+            </button>
+            <label className="month-control">
+              <span>Miesiąc grafiku</span>
+              <input
+                onChange={(event) => changeMonth(event.target.value)}
+                type="month"
+                value={selectedMonth}
+              />
+            </label>
+            <button
+              aria-label="Następny miesiąc grafiku"
+              onClick={() => changeMonth(addMonths(selectedMonth, 1))}
+              type="button"
+            >
+              <ChevronRight />
+            </button>
+          </div>
         </div>
         <div className="alert-feed">
           {monthlyLeaves.length > 0
@@ -777,6 +916,76 @@ export function ScheduleModule({ area = "raw" }: { area?: WorkforceArea }) {
         </div>
       </section>
 
+      <section className="panel schedule-previous-preview">
+        <div className="panel-heading">
+          <div>
+            <span>PODGLĄD DO PLANOWANIA</span>
+            <h3>Poprzedni miesiąc · {formatMonth(previousMonth)}</h3>
+          </div>
+          <button
+            className="secondary-button"
+            onClick={() => changeMonth(previousMonth)}
+            type="button"
+          >
+            <Eye /> Otwórz pełny grafik
+          </button>
+        </div>
+        {activeEmployees.length > 0 ? (
+          <div className="previous-month-table-wrap">
+            <table className="previous-month-table">
+              <thead>
+                <tr>
+                  <th>Pracownik</th>
+                  <th>Zmiana 1</th>
+                  <th>Zmiana 2</th>
+                  <th>Zmiana 3</th>
+                  <th>Inne godziny</th>
+                  <th>Weekend</th>
+                  <th>Urlop</th>
+                  <th>Dni pracy</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activeEmployees.map((employee) => {
+                  const employeeAssignments = previousAssignments.filter(
+                    (assignment) => assignment.employeeId === employee.id,
+                  );
+                  const employeeWeekends = previousWeekendAssignments.filter(
+                    (assignment) => assignment.employeeId === employee.id,
+                  );
+                  const leaveDays = monthDates(previousMonth).filter((date) =>
+                    previousLeaves.some((leave) =>
+                      leave.employeeId === employee.id &&
+                      leaveIncludesDate(leave, date)
+                    )
+                  ).length;
+                  const workDays = new Set([
+                    ...employeeAssignments.map((assignment) => assignment.date),
+                    ...employeeWeekends.map((assignment) => assignment.date),
+                  ]).size;
+                  return (
+                    <tr key={employee.id}>
+                      <td><span>{employeeInitials(employee.name)}</span><strong>{employee.name}</strong></td>
+                      {shifts.map((shift) => (
+                        <td key={shift}>{employeeAssignments.filter((item) => item.shift === shift).length}</td>
+                      ))}
+                      <td>{employeeAssignments.filter((item) => item.fromTime && item.toTime).length}</td>
+                      <td>{employeeWeekends.length}</td>
+                      <td>{leaveDays}</td>
+                      <td><b>{workDays}</b></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="previous-month-empty">
+            <CalendarDays /> Dodaj pracowników, aby porównać obciążenie z poprzednim miesiącem.
+          </div>
+        )}
+      </section>
+
       <div className="module-tabs" role="tablist" aria-label="Sekcje grafiku">
         <button
           className={tab === "planner" ? "active" : ""}
@@ -805,6 +1014,13 @@ export function ScheduleModule({ area = "raw" }: { area?: WorkforceArea }) {
           type="button"
         >
           <Umbrella /> Urlopy
+        </button>
+        <button
+          className={tab === "history" ? "active" : ""}
+          onClick={() => setTab("history")}
+          type="button"
+        >
+          <History /> Historia
         </button>
       </div>
 
@@ -1400,6 +1616,99 @@ export function ScheduleModule({ area = "raw" }: { area?: WorkforceArea }) {
               )}
           </div>
         </section>
+      )}
+
+      {tab === "history" && (
+        <section className="panel schedule-history-panel">
+          <div className="panel-heading">
+            <div>
+              <span>ARCHIWUM GRAFIKÓW · {areaLabels[area]}</span>
+              <h3>Zapisane wersje miesięczne</h3>
+            </div>
+            <button className="primary-button" onClick={saveScheduleVersion} type="button">
+              <Save /> Zapisz bieżący miesiąc
+            </button>
+          </div>
+          {sortedScheduleHistory.length > 0 ? (
+            <div className="schedule-history-list">
+              {sortedScheduleHistory.map((record) => {
+                const uniqueDays = new Set([
+                  ...record.assignments.map((assignment) => assignment.date),
+                  ...record.weekendAssignments.map((assignment) => assignment.date),
+                ]).size;
+                return (
+                  <article key={record.id}>
+                    <span><History /></span>
+                    <div>
+                      <small>WERSJA Z {formatSavedAt(record.savedAt)}</small>
+                      <strong>{formatMonth(record.month)}</strong>
+                      <p>
+                        {record.employees.length} pracowników · {uniqueDays} dni pracy · {record.assignments.length + record.weekendAssignments.length} wpisów
+                      </p>
+                    </div>
+                    <div className="schedule-history-actions">
+                      <button onClick={() => setHistoryPreview(record)} type="button"><Eye /> Podgląd</button>
+                      <button onClick={() => { changeMonth(record.month); setTab("planner"); }} type="button"><CalendarDays /> Otwórz miesiąc</button>
+                      <button aria-label="Usuń wersję grafiku" className="delete" onClick={() => deleteScheduleVersion(record.id)} type="button"><Trash2 /></button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="module-empty schedule-history-empty">
+              <History />
+              <strong>Historia grafiku jest pusta</strong>
+              <p>
+                Po ułożeniu miesiąca wybierz „Zapisz wersję”. Zapis pozostanie
+                dostępny nawet po późniejszych zmianach w bieżącym grafiku.
+              </p>
+            </div>
+          )}
+        </section>
+      )}
+
+      {historyPreview && (
+        <div className="modal-backdrop" onMouseDown={(event) => {
+          if (event.currentTarget === event.target) setHistoryPreview(null);
+        }}>
+          <div aria-modal="true" className="modal schedule-history-modal" role="dialog">
+            <div className="modal-heading">
+              <div>
+                <span>ZAPISANA WERSJA · {areaLabels[area]}</span>
+                <h2>{formatMonth(historyPreview.month)}</h2>
+                <p>Zapisano {formatSavedAt(historyPreview.savedAt)}</p>
+              </div>
+              <button aria-label="Zamknij" onClick={() => setHistoryPreview(null)} type="button">×</button>
+            </div>
+            <div className="schedule-history-preview-scroll">
+              <table className="schedule-history-preview-table">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    {historyPreview.employees.map((employee) => (
+                      <th key={employee.id}>{employee.name}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {monthDates(historyPreview.month).map((date) => (
+                    <tr className={isWeekend(date) ? "weekend" : ""} key={date}>
+                      <td><strong>{formatDate(date)}</strong><small>{formatWeekday(date, true)}</small></td>
+                      {historyPreview.employees.map((employee) => {
+                        const mark = historyMark(historyPreview, date, employee.id);
+                        return <td className={mark.tone} key={employee.id}><strong>{mark.value || "·"}</strong><small>{mark.detail}</small></td>;
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="form-actions">
+              <button className="secondary-button" onClick={() => setHistoryPreview(null)} type="button">Zamknij</button>
+            </div>
+          </div>
+        </div>
       )}
 
       <div

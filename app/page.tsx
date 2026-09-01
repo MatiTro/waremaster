@@ -14,9 +14,12 @@ import {
   FileText,
   Mail,
   LayoutDashboard,
+  LockKeyhole,
+  LogOut,
   MapPin,
   Maximize2,
   Menu,
+  Mic,
   Minimize2,
   PackageCheck,
   PackageOpen,
@@ -30,6 +33,7 @@ import {
   Sparkles,
   Trash2,
   Truck,
+  UserRound,
   Warehouse,
   X,
 } from "lucide-react";
@@ -43,6 +47,7 @@ import {
 } from "react";
 import { CleaningModule } from "./cleaning-module";
 import { DocumentationModule } from "./documentation-module";
+import { PalletCountModule } from "./pallet-count-module";
 import {
   FinishedDashboard,
   FinishedInventory,
@@ -115,10 +120,22 @@ type View =
   | "shiftboard"
   | "cleaning"
   | "documentation"
+  | "palletcount"
   | "suppliers"
   | "barcodes";
 
 type WarehouseArea = "raw" | "finished";
+type UserRole = "leader" | "warehouse_worker";
+
+type AuthSession = {
+  username: string;
+  displayName: string;
+  role: UserRole;
+};
+
+type TestAccount = AuthSession & {
+  password: string;
+};
 
 type SpeechAlternativeLike = { transcript: string; confidence?: number };
 type SpeechResultLike = ArrayLike<SpeechAlternativeLike> & { isFinal?: boolean };
@@ -193,6 +210,29 @@ type PlacementRule = {
 };
 
 const logisticsEmail = "logistyka@masterpress.com";
+const authSessionKey = "warehouse-masterpress:test-session:v1";
+const testAccounts: TestAccount[] = [
+  {
+    username: "lider",
+    password: "lider",
+    displayName: "Lider magazynu",
+    role: "leader",
+  },
+  {
+    username: "magazynier",
+    password: "magazynier",
+    displayName: "Magazynier",
+    role: "warehouse_worker",
+  },
+];
+const warehouseWorkerViews = new Set<View>([
+  "map",
+  "deliveries",
+  "shipments",
+  "shiftboard",
+  "documentation",
+  "barcodes",
+]);
 const storageKeys = {
   deliveries: "warehouse-masterpress:deliveries:production:v1",
   suppliers: "warehouse-masterpress:suppliers:production:v1",
@@ -392,6 +432,12 @@ const rawNavItems: NavItem[] = [
     icon: BarChart3,
   },
   {
+    id: "palletcount",
+    label: "Lista palet",
+    description: "Ręczne liczenie surowca",
+    icon: PackageOpen,
+  },
+  {
     id: "map",
     label: "Mapa magazynu",
     description: "Lokalizacje paletowe",
@@ -491,6 +537,157 @@ const warehouseAreaLabels: Record<WarehouseArea, string> = {
   finished: "Magazyn wyrobów gotowych",
 };
 
+const roleLabels: Record<UserRole, string> = {
+  leader: "Lider",
+  warehouse_worker: "Magazynier",
+};
+
+function isAuthSession(value: unknown): value is AuthSession {
+  if (!value || typeof value !== "object") return false;
+  const session = value as Partial<AuthSession>;
+  return testAccounts.some(
+    (account) =>
+      account.username === session.username &&
+      account.displayName === session.displayName &&
+      account.role === session.role,
+  );
+}
+
+function LoginScreen({
+  onLogin,
+}: {
+  onLogin: (session: AuthSession) => void;
+}) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  function signIn(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const normalizedUsername = username.trim().toLocaleLowerCase("pl");
+    const account = testAccounts.find(
+      (candidate) =>
+        candidate.username === normalizedUsername &&
+        candidate.password === password,
+    );
+    if (!account) {
+      setError("Nieprawidłowy login lub hasło.");
+      return;
+    }
+    setError("");
+    onLogin({
+      username: account.username,
+      displayName: account.displayName,
+      role: account.role,
+    });
+  }
+
+  function fillTestAccount(account: TestAccount) {
+    setUsername(account.username);
+    setPassword(account.password);
+    setError("");
+  }
+
+  return (
+    <main className="login-screen">
+      <section className="login-brand-panel">
+        <div className="login-brand-glow" />
+        <div className="login-brand-lockup">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            alt="Sygnet Masterpress"
+            src={`${import.meta.env.BASE_URL}masterpress-mark.png`}
+          />
+          <div>
+            <span>MASTERPRESS</span>
+            <strong>Warehouse</strong>
+          </div>
+        </div>
+        <div className="login-brand-copy">
+          <span>SYSTEM OPERACYJNY MAGAZYNU</span>
+          <h1>Jedno miejsce.<br />Pełna kontrola.</h1>
+          <p>
+            Operacje, lokalizacje i zespół magazynu w czytelnym środowisku
+            przygotowanym do pracy na tablecie.
+          </p>
+        </div>
+        <div className="login-brand-status">
+          <i />
+          <span>Środowisko testowe gotowe</span>
+        </div>
+      </section>
+
+      <section className="login-form-panel">
+        <div className="login-form-wrap">
+          <header>
+            <span className="login-eyebrow"><LockKeyhole /> DOSTĘP DO SYSTEMU</span>
+            <h2>Zaloguj się</h2>
+            <p>Wybierz konto testowe odpowiednie do zakresu pracy.</p>
+          </header>
+
+          <form className="login-form" onSubmit={signIn}>
+            <label>
+              Login
+              <div className="login-input">
+                <UserRound />
+                <input
+                  autoComplete="username"
+                  autoFocus
+                  onChange={(event) => setUsername(event.target.value)}
+                  placeholder="Wpisz login"
+                  value={username}
+                />
+              </div>
+            </label>
+            <label>
+              Hasło
+              <div className="login-input">
+                <LockKeyhole />
+                <input
+                  autoComplete="current-password"
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Wpisz hasło"
+                  type="password"
+                  value={password}
+                />
+              </div>
+            </label>
+            {error && <p aria-live="polite" className="login-error">{error}</p>}
+            <button className="login-submit" type="submit">
+              Zaloguj do Warehouse Masterpress <ChevronRight />
+            </button>
+          </form>
+
+          <div className="login-test-accounts">
+            <span>KONTA DO TESTÓW</span>
+            {testAccounts.map((account) => (
+              <button
+                key={account.username}
+                onClick={() => fillTestAccount(account)}
+                type="button"
+              >
+                <span className={`login-role-icon ${account.role}`}>
+                  {account.role === "leader" ? <Sparkles /> : <Warehouse />}
+                </span>
+                <span>
+                  <strong>{roleLabels[account.role]}</strong>
+                  <small>{account.username} / {account.password}</small>
+                </span>
+                <ChevronRight />
+              </button>
+            ))}
+          </div>
+
+          <p className="login-security-note">
+            Wersja demonstracyjna GitHub Pages. Docelowe konta i uprawnienia
+            zostaną zapisane oraz zweryfikowane na serwerze.
+          </p>
+        </div>
+      </section>
+    </main>
+  );
+}
+
 function Barcode({
   value,
   compact = false,
@@ -535,6 +732,8 @@ function StatusBadge({
 }
 
 export default function Home() {
+  const [authSession, setAuthSession] = useState<AuthSession | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [activeView, setActiveView] = useState<View>("dashboard");
   const [warehouseArea, setWarehouseArea] = useState<WarehouseArea>("raw");
   const [mobileNav, setMobileNav] = useState(false);
@@ -592,7 +791,7 @@ export default function Home() {
   const [editingSupplierId, setEditingSupplierId] = useState<number | null>(
     null,
   );
-  const [, setVoiceSpeaking] = useState(false);
+  const [voiceSpeaking, setVoiceSpeaking] = useState(false);
   const [selectedVoiceName, setSelectedVoiceName] = useState("");
   const [wakeMode, setWakeMode] = useState(false);
   const [vikiAwake, setVikiAwake] = useState(false);
@@ -623,9 +822,12 @@ export default function Home() {
   >({ warehouse: "main", rack: "A", topic: "rack" });
 
   const totalPallets = warehouses.A + warehouses.B;
-  const visibleNavItems = warehouseArea === "raw"
+  const areaNavItems = warehouseArea === "raw"
     ? rawNavItems
     : finishedNavItems;
+  const visibleNavItems = authSession?.role === "warehouse_worker"
+    ? areaNavItems.filter((item) => warehouseWorkerViews.has(item.id))
+    : areaNavItems;
   const monthlyDeliveries = useMemo(
     () =>
       deliveries.filter((delivery) => delivery.date.startsWith(deliveryMonth)),
@@ -788,6 +990,26 @@ export default function Home() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       try {
+        const stored = JSON.parse(
+          window.sessionStorage.getItem(authSessionKey) || "null",
+        );
+        if (isAuthSession(stored)) {
+          setAuthSession(stored);
+          setActiveView(
+            stored.role === "warehouse_worker" ? "shiftboard" : "dashboard",
+          );
+        }
+      } catch {
+        window.sessionStorage.removeItem(authSessionKey);
+      }
+      setAuthReady(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try {
         const storedDeliveries = migrateDeliveries(JSON.parse(
           window.localStorage.getItem(storageKeys.deliveries) || "null",
         ));
@@ -878,7 +1100,36 @@ export default function Home() {
     [],
   );
 
+  function handleLogin(session: AuthSession) {
+    window.sessionStorage.setItem(authSessionKey, JSON.stringify(session));
+    setAuthSession(session);
+    setWarehouseArea("raw");
+    setActiveView(
+      session.role === "warehouse_worker" ? "shiftboard" : "dashboard",
+    );
+    setMobileNav(false);
+    setSidebarCollapsed(false);
+  }
+
+  function logout() {
+    stopWakeMode();
+    window.sessionStorage.removeItem(authSessionKey);
+    setAuthSession(null);
+    setWarehouseArea("raw");
+    setActiveView("dashboard");
+    setGlobalSearch("");
+    setMobileNav(false);
+    setSidebarCollapsed(false);
+  }
+
   function navigate(view: View) {
+    if (
+      authSession?.role === "warehouse_worker" &&
+      !visibleNavItems.some((item) => item.id === view)
+    ) {
+      setToast("Ten moduł jest dostępny na koncie lidera.");
+      return;
+    }
     setActiveView(view);
     setMobileNav(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -892,7 +1143,9 @@ export default function Home() {
       setSelectedMainRack("A");
       setSelectedMapSlot({ column: 1, level: 0, slot: 1 });
     }
-    setActiveView("dashboard");
+    setActiveView(
+      authSession?.role === "warehouse_worker" ? "shiftboard" : "dashboard",
+    );
     setGlobalSearch("");
     setMobileNav(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -2231,9 +2484,6 @@ export default function Home() {
     }
   }
 
-  // Funkcja pozostaje przygotowana do ponownego włączenia VIKI po zbudowaniu
-  // obu obszarów; w tej wersji interfejs nie udostępnia jej użytkownikowi.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   function startWakeMode() {
     if (!speechRecognitionConstructor()) {
       speakAnswer("Tryb VIKI wymaga aktualnej wersji Chrome albo Edge.");
@@ -2375,7 +2625,9 @@ export default function Home() {
     const body = encodeURIComponent(
       `Dzień dobry,\n\nnie znaleziono danych dla wpisanej wartości: ${query}.\nProszę o weryfikację ładunku lub zamówienia w D365.\n\nWiadomość wygenerowana przez Warehouse Masterpress.`,
     );
-    window.location.href = `mailto:${logisticsEmail}?subject=${subject}&body=${body}`;
+    window.location.assign(
+      `mailto:${logisticsEmail}?subject=${subject}&body=${body}`,
+    );
   }
 
   function updateGeneratorLocation(patch: Partial<GeneratorLocation>) {
@@ -2395,6 +2647,23 @@ export default function Home() {
   const editedSupplier = editingSupplierId
     ? supplierCatalog.find((supplier) => supplier.id === editingSupplierId)
     : undefined;
+
+  if (!authReady) {
+    return (
+      <main className="login-loading" aria-label="Uruchamianie Warehouse Masterpress">
+        <span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            alt=""
+            src={`${import.meta.env.BASE_URL}masterpress-mark.png`}
+          />
+        </span>
+        <p>Uruchamianie Warehouse Masterpress…</p>
+      </main>
+    );
+  }
+
+  if (!authSession) return <LoginScreen onLogin={handleLogin} />;
 
   return (
     <main
@@ -2459,6 +2728,19 @@ export default function Home() {
             <span><PackageCheck size={18} /></span>
             <div><strong>Wyroby gotowe</strong><small>Wydania i wysyłki</small></div>
             <Check size={16} />
+          </button>
+        </div>
+
+        <div className="sidebar-account">
+          <span className="sidebar-account-avatar">
+            <UserRound />
+          </span>
+          <span>
+            <strong>{authSession.displayName}</strong>
+            <small>{roleLabels[authSession.role]}</small>
+          </span>
+          <button aria-label="Wyloguj" onClick={logout} title="Wyloguj" type="button">
+            <LogOut />
           </button>
         </div>
       </aside>
@@ -4215,11 +4497,28 @@ export default function Home() {
           <DocumentationModule area={warehouseArea} />
         )}
 
+        {warehouseArea === "raw" && activeView === "palletcount" && (
+          <PalletCountModule />
+        )}
+
         <footer>
           <span>Warehouse Masterpress · system magazynowy</span>
           <span>Wersja operacyjna · gotowa do integracji danych</span>
         </footer>
       </section>
+
+      <button
+        aria-label={wakeMode ? "Wyłącz VIKI" : "Włącz VIKI"}
+        aria-pressed={wakeMode}
+        className={`voice-assistant-trigger ${wakeMode ? "active" : ""} ${vikiAwake ? "awake" : ""} ${voiceSpeaking ? "speaking" : ""}`}
+        onClick={wakeMode ? stopWakeMode : startWakeMode}
+        title={wakeMode ? "VIKI czuwa — kliknij, aby wyłączyć" : "Włącz asystenta głosowego VIKI"}
+        type="button"
+      >
+        <Mic />
+        <span>VIKI</span>
+        <i />
+      </button>
 
       {deliveryModal && (
         <div

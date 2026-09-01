@@ -21,7 +21,7 @@ const documents = [
     id: "cmr",
     title: "Wzór CMR",
     description:
-      "Pusty międzynarodowy list przewozowy z uporządkowanymi polami nadawcy, odbiorcy, przewoźnika i towaru.",
+      "Czarno-biały międzynarodowy list przewozowy z 24 numerowanymi polami w układzie modelu IRU CMR 2007.",
     fileName: "Warehouse-Masterpress-wzor-CMR.pdf",
     downloadName: "Wzor-CMR-Masterpress.pdf",
     icon: Truck,
@@ -31,7 +31,7 @@ const documents = [
     id: "wz",
     title: "Wzór WZ",
     description:
-      "Pusty dokument wydania zewnętrznego z miejscem na pozycje, partie, ilości, palety oraz podpisy.",
+      "Czytelny dokument wydania zewnętrznego do druku czarno-białego, z miejscem na pozycje, partie, palety i podpisy.",
     fileName: "Warehouse-Masterpress-wzor-WZ.pdf",
     downloadName: "Wzor-WZ-Masterpress.pdf",
     icon: PackageCheck,

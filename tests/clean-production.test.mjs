@@ -30,6 +30,18 @@ const documentationSource = await readFile(
   new URL("../app/documentation-module.tsx", import.meta.url),
   "utf8",
 );
+const palletCountSource = await readFile(
+  new URL("../app/pallet-count-module.tsx", import.meta.url),
+  "utf8",
+);
+const documentGeneratorSource = await readFile(
+  new URL("../scripts/generate-document-templates.py", import.meta.url),
+  "utf8",
+);
+const indexSource = await readFile(
+  new URL("../index.html", import.meta.url),
+  "utf8",
+);
 const globalStyles = await readFile(
   new URL("../app/globals.css", import.meta.url),
   "utf8",
@@ -55,7 +67,7 @@ test("wersja produkcyjna nie generuje fikcyjnych ładunków ani zajętości", ()
   assert.match(modelSource, /export const inventoryDataAvailable = false;/);
 });
 
-test("VIKI jest ukryta w wersji budującej dwa obszary pracy", () => {
+test("VIKI wraca jako mały moduł głosowy bez okna czatu", () => {
   for (const forbidden of [
     'className="voice-assistant-panel"',
     'className="voice-result"',
@@ -66,8 +78,35 @@ test("VIKI jest ukryta w wersji budującej dwa obszary pracy", () => {
   ]) {
     assert.equal(pageSource.includes(forbidden), false, forbidden);
   }
-  assert.equal(pageSource.includes("voice-assistant-trigger"), false);
-  assert.equal(pageSource.includes("<span>VIKI</span>"), false);
+  assert.match(pageSource, /className=\{`voice-assistant-trigger/);
+  assert.match(pageSource, /<Mic \/>/);
+  assert.match(pageSource, /<span>VIKI<\/span>/);
+  assert.match(pageSource, /onClick=\{wakeMode \? stopWakeMode : startWakeMode\}/);
+  assert.match(pageSource, /aria-label=\{wakeMode \? "Wyłącz VIKI" : "Włącz VIKI"\}/);
+});
+
+test("wersja GitHub Pages rozdziela konto lidera i magazyniera", () => {
+  assert.match(pageSource, /type UserRole = "leader" \| "warehouse_worker"/);
+  assert.match(pageSource, /username: "lider"/);
+  assert.match(pageSource, /password: "lider"/);
+  assert.match(pageSource, /username: "magazynier"/);
+  assert.match(pageSource, /password: "magazynier"/);
+  assert.match(pageSource, /warehouse-masterpress:test-session:v1/);
+  assert.match(pageSource, /const warehouseWorkerViews = new Set<View>/);
+  for (const allowed of [
+    '"map"',
+    '"deliveries"',
+    '"shipments"',
+    '"shiftboard"',
+    '"documentation"',
+    '"barcodes"',
+  ]) assert.match(pageSource, new RegExp(allowed));
+  assert.match(pageSource, /stored\.role === "warehouse_worker" \? "shiftboard" : "dashboard"/);
+  assert.match(pageSource, /className="login-screen"/);
+  assert.match(pageSource, /Warehouse Masterpress/);
+  assert.match(pageSource, /Wersja demonstracyjna GitHub Pages/);
+  assert.match(pageSource, /className="sidebar-account"/);
+  assert.match(pageSource, /Ten moduł jest dostępny na koncie lidera/);
 });
 
 test("portal rozdziela magazyn surowców i wyrobów gotowych", () => {
@@ -109,6 +148,15 @@ test("Grafik ma zwarty arkusz, osobne weekendy i profesjonalny wydruk", () => {
   assert.match(scheduleSource, /schedule-custom-hours/);
   assert.match(scheduleSource, /customTo < customFrom/);
   assert.match(scheduleSource, /formatWorkHours/);
+  assert.match(scheduleSource, /const scheduledDayCount = new Set\(/);
+  assert.match(scheduleSource, /monthlyAssignments\.map\(\(assignment\) => assignment\.date\)/);
+  assert.match(scheduleSource, /Poprzedni miesiąc/);
+  assert.match(scheduleSource, /Otwórz pełny grafik/);
+  assert.match(scheduleSource, /type ScheduleHistoryRecord/);
+  assert.match(scheduleSource, /schedule-history:raw:v1/);
+  assert.match(scheduleSource, /schedule-history:finished:v1/);
+  assert.match(scheduleSource, /Zapisz wersję/);
+  assert.match(scheduleSource, /setTab\("history"\)/);
   assert.equal(scheduleSource.includes("WAREHOUSE<br />MASTERPRESS"), false);
   assert.match(scheduleSource, /MAGAZYN<br \/>SUROWCÓW/);
   assert.match(scheduleSource, /MAGAZYN WYROBÓW<br \/>GOTOWYCH/);
@@ -116,6 +164,8 @@ test("Grafik ma zwarty arkusz, osobne weekendy i profesjonalny wydruk", () => {
   assert.match(globalStyles, /size: A4 landscape/);
   assert.match(globalStyles, /workforce-module > \*:not\(\.schedule-print-document\)/);
   assert.match(globalStyles, /schedule-print-page tbody tr\.weekend/);
+  assert.match(globalStyles, /tbody tr\.weekend td\.custom-hours/);
+  assert.match(globalStyles, /background: #d9d9d9 !important/);
   assert.match(globalStyles, /schedule-matrix-cell\.custom-hours/);
 });
 
@@ -150,6 +200,46 @@ test("Dokumentacja udostępnia wzory CMR i WZ w obu obszarach", async () => {
   ));
   assert.ok(cmr.size > 10_000);
   assert.ok(wz.size > 10_000);
+});
+
+test("CMR korzysta z układu IRU 2007, a dokumenty są czytelne w czerni i bieli", () => {
+  const cmrGenerator = documentGeneratorSource.slice(
+    documentGeneratorSource.indexOf("def generate_cmr"),
+    documentGeneratorSource.indexOf("def simple_field"),
+  );
+  assert.match(cmrGenerator, /model IRU CMR 2007/);
+  assert.match(cmrGenerator, /numbered_box\(c, margin, top, left, 71, 1/);
+  assert.match(cmrGenerator, /24, "Odbiorca"/);
+  assert.equal(cmrGenerator.includes("LOGO"), false);
+  assert.equal(documentGeneratorSource.includes("NAVY"), false);
+  assert.match(documentationSource, /druku czarno-białego/);
+});
+
+test("karta przeglądarki używa sygnetu Masterpress", () => {
+  assert.match(indexSource, /rel="icon"[^>]+masterpress-mark\.png/);
+  assert.equal(indexSource.includes("favicon.svg"), false);
+});
+
+test("Lista palet jest dostępna tylko w magazynie surowców i nie zawiera danych demonstracyjnych", () => {
+  assert.match(pageSource, /id: "palletcount"/);
+  assert.equal((pageSource.match(/id: "palletcount"/g) ?? []).length, 1);
+  assert.match(pageSource, /warehouseArea === "raw" && activeView === "palletcount"/);
+  for (const category of [
+    "Folia termokurczliwa",
+    "Papier samoprzylepny",
+    "Tektura",
+    "Papier kredowy",
+    "Wiadra",
+    "Folia CS i laminat",
+    "Inne",
+  ]) assert.match(palletCountSource, new RegExp(category));
+  assert.match(palletCountSource, /pallet-count:draft:v1/);
+  assert.match(palletCountSource, /pallet-count:history:v1/);
+  assert.match(palletCountSource, /Record<CategoryId, number \| null>/);
+  assert.match(palletCountSource, /\+5 palet/);
+  assert.match(palletCountSource, /Wpisz 0/);
+  assert.match(palletCountSource, /Zapisz wynik/);
+  assert.equal(palletCountSource.includes("initialPallet"), false);
 });
 
 test("Dostawy mają tylko dostawcę i liczbę palet, a konfiguracja znika z menu", () => {
