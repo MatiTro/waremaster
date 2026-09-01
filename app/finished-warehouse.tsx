@@ -17,8 +17,14 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { WorkforceSummary } from "./schedule-module";
+import { ShiftBoardSummary } from "./shift-board";
 
-type FinishedView = "inventory" | "map" | "shipments" | "schedule";
+type FinishedView =
+  | "inventory"
+  | "map"
+  | "shipments"
+  | "schedule"
+  | "shiftboard";
 type ShipmentTab = "today" | "week";
 
 export function FinishedDashboard({
@@ -42,6 +48,11 @@ export function FinishedDashboard({
       </section>
 
       <WorkforceSummary area="finished" />
+
+      <ShiftBoardSummary
+        area="finished"
+        onOpen={() => onNavigate("shiftboard")}
+      />
 
       <section className="kpi-grid" aria-label="Wskaźniki magazynu wyrobów gotowych">
         <article className="metric-card metric-primary">
@@ -191,47 +202,6 @@ export function FinishedInventory() {
             </tbody>
           </table>
         </div>
-      </section>
-    </div>
-  );
-}
-
-export function FinishedMap() {
-  return (
-    <div className="view-stack finished-module">
-      <section className="view-intro finished-view-intro">
-        <div>
-          <span>ODRĘBNY UKŁAD MAGAZYNU</span>
-          <h2>Mapa magazynu wyrobów gotowych</h2>
-          <p>
-            Ten widok nie korzysta z regałów magazynu surowców. Odwzorujemy
-            tutaj rzeczywisty układ po otrzymaniu oznaczeń i planu obszaru.
-          </p>
-        </div>
-      </section>
-
-      <section className="finished-map-layout">
-        <article className="panel finished-map-canvas">
-          <div className="finished-map-grid" aria-hidden="true" />
-          <div className="finished-map-empty">
-            <span><MapPin /></span>
-            <h3>Miejsce na docelową mapę</h3>
-            <p>
-              Strefy, regały i miejsca paletowe dodamy zgodnie z fizycznym
-              układem magazynu wyrobów gotowych.
-            </p>
-          </div>
-        </article>
-        <aside className="panel finished-map-inspector">
-          <span>WYBRANY OBSZAR</span>
-          <h3>Brak wyboru</h3>
-          <dl>
-            <div><dt>Strefa</dt><dd>—</dd></div>
-            <div><dt>Lokalizacja</dt><dd>—</dd></div>
-            <div><dt>Palety</dt><dd>—</dd></div>
-            <div><dt>Status</dt><dd>Oczekuje na mapę</dd></div>
-          </dl>
-        </aside>
       </section>
     </div>
   );

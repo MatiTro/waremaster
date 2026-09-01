@@ -42,13 +42,14 @@ import {
   useState,
 } from "react";
 import { CleaningModule } from "./cleaning-module";
+import { DocumentationModule } from "./documentation-module";
 import {
   FinishedDashboard,
   FinishedInventory,
-  FinishedMap,
   ShipmentsModule,
 } from "./finished-warehouse";
 import { ScheduleModule, WorkforceSummary } from "./schedule-module";
+import { ShiftBoardModule, ShiftBoardSummary } from "./shift-board";
 import { answerScheduleVoiceCommand } from "./schedule-voice";
 import {
   detectVikiWake,
@@ -111,7 +112,9 @@ type View =
   | "deliveries"
   | "shipments"
   | "schedule"
+  | "shiftboard"
   | "cleaning"
+  | "documentation"
   | "suppliers"
   | "barcodes";
 
@@ -407,10 +410,22 @@ const rawNavItems: NavItem[] = [
     icon: CalendarDays,
   },
   {
+    id: "shiftboard",
+    label: "Tablica zmianowa",
+    description: "Zadania, komunikaty i problemy",
+    icon: ClipboardList,
+  },
+  {
     id: "cleaning",
     label: "Karta mycia",
     description: "Dokumenty i odpowiedzialność",
     icon: Droplets,
+  },
+  {
+    id: "documentation",
+    label: "Dokumentacja",
+    description: "Wzory CMR i WZ",
+    icon: BookOpen,
   },
   {
     id: "barcodes",
@@ -452,10 +467,22 @@ const finishedNavItems: NavItem[] = [
     icon: CalendarDays,
   },
   {
+    id: "shiftboard",
+    label: "Tablica zmianowa",
+    description: "Zadania, komunikaty i problemy",
+    icon: ClipboardList,
+  },
+  {
     id: "cleaning",
     label: "Karta mycia",
     description: "Dokumentacja tego obszaru",
     icon: Droplets,
+  },
+  {
+    id: "documentation",
+    label: "Dokumentacja",
+    description: "Wzory CMR i WZ",
+    icon: BookOpen,
   },
 ];
 
@@ -860,6 +887,11 @@ export default function Home() {
   function selectWarehouseArea(area: WarehouseArea) {
     if (area === warehouseArea) return;
     setWarehouseArea(area);
+    if (area === "finished") {
+      setMapWarehouse("main");
+      setSelectedMainRack("A");
+      setSelectedMapSlot({ column: 1, level: 0, slot: 1 });
+    }
     setActiveView("dashboard");
     setGlobalSearch("");
     setMobileNav(false);
@@ -2493,6 +2525,11 @@ export default function Home() {
 
             <WorkforceSummary area="raw" />
 
+            <ShiftBoardSummary
+              area="raw"
+              onOpen={() => navigate("shiftboard")}
+            />
+
             <section className="kpi-grid">
               <article className="metric-card metric-primary">
                 <div>
@@ -2856,37 +2893,49 @@ export default function Home() {
           </div>
         )}
 
-        {warehouseArea === "raw" && activeView === "map" && (
+        {activeView === "map" && (
           <div className="view-stack location-navigator-view">
-            <section className="warehouse-switch panel">
-              <div>
-                <small>MAPA MAGAZYNÓW</small>
-                <strong>Wybierz obiekt</strong>
-              </div>
-              <div>
-                {(["main", "new"] as MapWarehouse[]).map((warehouse) => (
-                  <button
-                    className={mapWarehouse === warehouse ? "active" : ""}
-                    key={warehouse}
-                    onClick={() => {
-                      setMapWarehouse(warehouse);
-                      if (warehouse === "main") {
-                        setSelectedMainRack("A");
-                        setSelectedMapSlot({ column: 1, level: 0, slot: 1 });
-                      } else {
-                        setMapBlock("M1");
-                        setSelectedRack(1);
-                        setSelectedMapSlot({ column: 3, level: 4, slot: 1 });
-                      }
-                    }}
-                    type="button"
-                  >
-                    <Warehouse />
-                    {warehouse === "main" ? "Magazyn główny" : "Nowy magazyn"}
-                  </button>
-                ))}
-              </div>
-            </section>
+            {warehouseArea === "raw" ? (
+              <section className="warehouse-switch panel">
+                <div>
+                  <small>MAPA MAGAZYNÓW</small>
+                  <strong>Wybierz obiekt</strong>
+                </div>
+                <div>
+                  {(["main", "new"] as MapWarehouse[]).map((warehouse) => (
+                    <button
+                      className={mapWarehouse === warehouse ? "active" : ""}
+                      key={warehouse}
+                      onClick={() => {
+                        setMapWarehouse(warehouse);
+                        if (warehouse === "main") {
+                          setSelectedMainRack("A");
+                          setSelectedMapSlot({ column: 1, level: 0, slot: 1 });
+                        } else {
+                          setMapBlock("M1");
+                          setSelectedRack(1);
+                          setSelectedMapSlot({ column: 3, level: 4, slot: 1 });
+                        }
+                      }}
+                      type="button"
+                    >
+                      <Warehouse />
+                      {warehouse === "main" ? "Magazyn główny" : "Nowy magazyn"}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ) : (
+              <section className="warehouse-switch panel finished-main-map-heading">
+                <div>
+                  <small>MAGAZYN WYROBÓW GOTOWYCH</small>
+                  <strong>Magazyn główny</strong>
+                </div>
+                <div>
+                  <span className="fixed-map-object"><Warehouse /> Regały A–G</span>
+                </div>
+              </section>
+            )}
             <section className="navigator-controls">
               {mapWarehouse === "main" ? (
                 <article className="panel rack-selector-panel main-rack-selector">
@@ -3376,17 +3425,21 @@ export default function Home() {
                     </ul>
                   </div>
                 )}
-                <div className="barcode-preview-note">
-                  <small>WARTOŚĆ KODU KRESKOWEGO</small>
-                  <strong>{selectedMapLocation.replace(/^M/, "")}</strong>
-                </div>
-                <button
-                  className="primary-button full-button"
-                  onClick={() => setMapBarcodeOpen(true)}
-                  type="button"
-                >
-                  <QrCode /> Wygeneruj kod lokalizacji
-                </button>
+                {warehouseArea === "raw" && (
+                  <>
+                    <div className="barcode-preview-note">
+                      <small>WARTOŚĆ KODU KRESKOWEGO</small>
+                      <strong>{selectedMapLocation.replace(/^M/, "")}</strong>
+                    </div>
+                    <button
+                      className="primary-button full-button"
+                      onClick={() => setMapBarcodeOpen(true)}
+                      type="button"
+                    >
+                      <QrCode /> Wygeneruj kod lokalizacji
+                    </button>
+                  </>
+                )}
               </aside>
             </section>
           </div>
@@ -4142,10 +4195,6 @@ export default function Home() {
           <FinishedInventory />
         )}
 
-        {warehouseArea === "finished" && activeView === "map" && (
-          <FinishedMap />
-        )}
-
         {warehouseArea === "finished" && activeView === "shipments" && (
           <ShipmentsModule />
         )}
@@ -4156,6 +4205,14 @@ export default function Home() {
 
         {activeView === "cleaning" && (
           <CleaningModule key={warehouseArea} warehouse={warehouseArea} />
+        )}
+
+        {activeView === "shiftboard" && (
+          <ShiftBoardModule key={warehouseArea} area={warehouseArea} />
+        )}
+
+        {activeView === "documentation" && (
+          <DocumentationModule area={warehouseArea} />
         )}
 
         <footer>

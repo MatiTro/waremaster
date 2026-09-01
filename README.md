@@ -8,6 +8,8 @@ Firmowa aplikacja magazynowa Masterpress do:
 - przeglądania i filtrowania historii dostaw,
 - generowania kodów tylko dla prawidłowych lokalizacji,
 - układania grafiku zmian i planowania urlopów,
+- przekazywania zadań, komunikatów i problemów między zmianami,
+- pobierania roboczych wzorów CMR i WZ,
 - tworzenia i drukowania kart mycia w PDF-ie.
 
 ## Uruchomienie na Windows
@@ -47,9 +49,10 @@ włączoną na komputerach firmowych. Zatrzymanie aplikacji: `Ctrl+C`.
 ## Ważne informacje
 
 - Portal ma dwa niezależne obszary: magazyn surowców oraz magazyn wyrobów
-  gotowych. Każdy ma własne menu, widoki, grafik i dokumentację mycia.
-- Mapa magazynu surowców zachowuje uzgodnioną strukturę. Mapa wyrobów gotowych
-  jest osobnym miejscem i czeka na przekazanie rzeczywistego planu.
+  gotowych. Każdy ma własne menu, widoki, grafik, tablicę zmianową i kartę mycia.
+- Oba obszary korzystają obecnie z czytelnego widoku całego regału A–G,
+  odpowiadającego układowi magazynu głównego. Dane każdego obszaru pozostają
+  rozdzielone i mogą później otrzymać niezależne mapowanie z bazy.
 - Aplikacja startuje bez fikcyjnych zapasów, dostawców, dostaw i numerów NI.
 - Do czasu integracji stan lokalizacji jest oznaczony jako „Brak danych”, a nie
   jako wolny lub zajęty.
@@ -62,7 +65,11 @@ włączoną na komputerach firmowych. Zatrzymanie aplikacji: `Ctrl+C`.
 - Praca weekendowa ma osobną listę, a kolizje z urlopem i komunikaty o obsadzie
   są oznaczone na czerwono.
 - Wydruk grafiku ma układ poziomy i pełnostronicową tabelę: dni są w wierszach,
-  a pracownicy w kolumnach.
+  a pracownicy w kolumnach. Nagłówek jednoznacznie wskazuje magazyn surowców
+  albo magazyn wyrobów gotowych.
+- Tablica zmianowa przechowuje osobno dla każdego magazynu zadania, komunikaty
+  i problemy wraz z priorytetem, odpowiedzialną osobą, terminem i statusem.
+- Moduł Dokumentacja udostępnia robocze wzory CMR oraz WZ w formacie PDF.
 - VIKI jest celowo wyłączona w tej wersji, aby najpierw dopracować oba obszary
   operacyjne.
 - Karta mycia obsługuje formularze F-02a, F-02b i F-02c dla magazynu surowców

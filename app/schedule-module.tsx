@@ -1418,11 +1418,16 @@ export function ScheduleModule({ area = "raw" }: { area?: WorkforceArea }) {
                   alt="Masterpress"
                   src={import.meta.env.BASE_URL + "masterpress-logo-dark.png"}
                 />
-                <span>WAREHOUSE<br />MASTERPRESS</span>
+                <span>
+                  {area === "raw" ? (
+                    <>MAGAZYN<br />SUROWCÓW</>
+                  ) : (
+                    <>MAGAZYN WYROBÓW<br />GOTOWYCH</>
+                  )}
+                </span>
               </div>
               <div className="schedule-print-heading">
                 <div>
-                  <small>{areaLabels[area]}</small>
                   <h1>Grafik pracowników</h1>
                 </div>
                 <p>{formatMonth(selectedMonth)}</p>

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import test from "node:test";
 
 const pageSource = await readFile(
@@ -20,6 +20,14 @@ const cleaningSource = await readFile(
 );
 const finishedSource = await readFile(
   new URL("../app/finished-warehouse.tsx", import.meta.url),
+  "utf8",
+);
+const shiftBoardSource = await readFile(
+  new URL("../app/shift-board.tsx", import.meta.url),
+  "utf8",
+);
+const documentationSource = await readFile(
+  new URL("../app/documentation-module.tsx", import.meta.url),
   "utf8",
 );
 const globalStyles = await readFile(
@@ -68,8 +76,10 @@ test("portal rozdziela magazyn surowców i wyrobów gotowych", () => {
   assert.match(pageSource, /const rawNavItems/);
   assert.match(pageSource, /const finishedNavItems/);
   assert.match(pageSource, /id: "shipments"/);
-  assert.match(pageSource, /<FinishedMap/);
-  assert.match(finishedSource, /Mapa magazynu wyrobów gotowych/);
+  assert.equal(pageSource.includes("<FinishedMap"), false);
+  assert.match(pageSource, /finished-main-map-heading/);
+  assert.match(pageSource, /Regały A–G/);
+  assert.match(pageSource, /activeView === "map"/);
   assert.match(finishedSource, /Brak zaimportowanych stanów wyrobów/);
   assert.match(finishedSource, /className="command-hero"/);
   assert.match(finishedSource, /Indeksy wyrobów/);
@@ -99,13 +109,47 @@ test("Grafik ma zwarty arkusz, osobne weekendy i profesjonalny wydruk", () => {
   assert.match(scheduleSource, /schedule-custom-hours/);
   assert.match(scheduleSource, /customTo < customFrom/);
   assert.match(scheduleSource, /formatWorkHours/);
-  assert.match(scheduleSource, /WAREHOUSE<br \/>MASTERPRESS/);
-  assert.match(scheduleSource, /<small>\{areaLabels\[area\]\}<\/small>/);
+  assert.equal(scheduleSource.includes("WAREHOUSE<br />MASTERPRESS"), false);
+  assert.match(scheduleSource, /MAGAZYN<br \/>SUROWCÓW/);
+  assert.match(scheduleSource, /MAGAZYN WYROBÓW<br \/>GOTOWYCH/);
   assert.match(globalStyles, /@page workforce-landscape/);
   assert.match(globalStyles, /size: A4 landscape/);
   assert.match(globalStyles, /workforce-module > \*:not\(\.schedule-print-document\)/);
   assert.match(globalStyles, /schedule-print-page tbody tr\.weekend/);
   assert.match(globalStyles, /schedule-matrix-cell\.custom-hours/);
+});
+
+test("Tablica zmianowa działa osobno dla obu magazynów", () => {
+  const occurrences = pageSource.match(/id: "shiftboard"/g) ?? [];
+  assert.equal(occurrences.length, 2);
+  assert.match(shiftBoardSource, /shift-board:raw:v1/);
+  assert.match(shiftBoardSource, /shift-board:finished:v1/);
+  assert.match(shiftBoardSource, /Zadanie/);
+  assert.match(shiftBoardSource, /Komunikat/);
+  assert.match(shiftBoardSource, /Problem/);
+  assert.match(shiftBoardSource, /Do zrobienia/);
+  assert.match(shiftBoardSource, /W trakcie/);
+  assert.match(shiftBoardSource, /Gotowe/);
+  assert.equal(shiftBoardSource.includes("const initial"), false);
+  assert.match(finishedSource, /ShiftBoardSummary/);
+});
+
+test("Dokumentacja udostępnia wzory CMR i WZ w obu obszarach", async () => {
+  const occurrences = pageSource.match(/id: "documentation"/g) ?? [];
+  assert.equal(occurrences.length, 2);
+  assert.match(documentationSource, /Warehouse-Masterpress-wzor-CMR\.pdf/);
+  assert.match(documentationSource, /Warehouse-Masterpress-wzor-WZ\.pdf/);
+  assert.match(documentationSource, /WZÓR ROBOCZY/);
+  const cmr = await stat(new URL(
+    "../public/documents/Warehouse-Masterpress-wzor-CMR.pdf",
+    import.meta.url,
+  ));
+  const wz = await stat(new URL(
+    "../public/documents/Warehouse-Masterpress-wzor-WZ.pdf",
+    import.meta.url,
+  ));
+  assert.ok(cmr.size > 10_000);
+  assert.ok(wz.size > 10_000);
 });
 
 test("Dostawy mają tylko dostawcę i liczbę palet, a konfiguracja znika z menu", () => {
