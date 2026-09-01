@@ -227,6 +227,7 @@ const testAccounts: TestAccount[] = [
 ];
 const warehouseWorkerViews = new Set<View>([
   "map",
+  "palletcount",
   "deliveries",
   "shipments",
   "shiftboard",
@@ -592,37 +593,55 @@ function LoginScreen({
     <main className="login-screen">
       <section className="login-brand-panel">
         <div className="login-brand-glow" />
+        <div className="login-scan-line" />
+        <div aria-hidden="true" className="login-orbit">
+          <i /><i /><i />
+        </div>
         <div className="login-brand-lockup">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            alt="Sygnet Masterpress"
-            src={`${import.meta.env.BASE_URL}masterpress-mark.png`}
+            alt="Masterpress"
+            src={`${import.meta.env.BASE_URL}masterpress-login-logo.png`}
           />
-          <div>
-            <span>MASTERPRESS</span>
-            <strong>Warehouse</strong>
-          </div>
         </div>
         <div className="login-brand-copy">
-          <span>SYSTEM OPERACYJNY MAGAZYNU</span>
-          <h1>Jedno miejsce.<br />Pełna kontrola.</h1>
+          <span>CENTRUM OPERACJI MAGAZYNOWYCH</span>
+          <h1>
+            Każda operacja.<br />
+            <em>Jedno miejsce.</em>
+          </h1>
           <p>
-            Operacje, lokalizacje i zespół magazynu w czytelnym środowisku
-            przygotowanym do pracy na tablecie.
+            Wspólne środowisko dla lokalizacji, przepływu towaru i pracy zespołu.
+            Aktualna informacja zawsze tam, gdzie jest potrzebna.
           </p>
+        </div>
+        <div className="login-capability-strip">
+          <article>
+            <span><MapPin /></span>
+            <div><small>01</small><strong>Lokalizacje</strong></div>
+          </article>
+          <article>
+            <span><Truck /></span>
+            <div><small>02</small><strong>Przepływ towaru</strong></div>
+          </article>
+          <article>
+            <span><CalendarDays /></span>
+            <div><small>03</small><strong>Zespół i plan</strong></div>
+          </article>
         </div>
         <div className="login-brand-status">
           <i />
-          <span>Środowisko testowe gotowe</span>
+          <span>Warehouse Masterpress · środowisko testowe</span>
         </div>
       </section>
 
       <section className="login-form-panel">
         <div className="login-form-wrap">
+          <div className="login-form-accent"><span /><span /><span /></div>
           <header>
             <span className="login-eyebrow"><LockKeyhole /> DOSTĘP DO SYSTEMU</span>
-            <h2>Zaloguj się</h2>
-            <p>Wybierz konto testowe odpowiednie do zakresu pracy.</p>
+            <h2>Witaj ponownie</h2>
+            <p>Zaloguj się do swojego obszaru operacyjnego.</p>
           </header>
 
           <form className="login-form" onSubmit={signIn}>

@@ -5,7 +5,7 @@ Firmowa aplikacja magazynowa Masterpress do:
 - raportowania dostaw surowców i planowania wysyłek wyrobów gotowych,
 - obsługi dwóch niezależnych magazynów w jednym portalu,
 - analizowania zapasu według rodzaju surowca lub wyrobu,
-- ręcznego liczenia palet według siedmiu rodzajów surowca,
+- ręcznego liczenia palet według ośmiu rodzajów surowca,
 - przeglądania i filtrowania historii dostaw,
 - generowania kodów tylko dla prawidłowych lokalizacji,
 - układania grafiku zmian i planowania urlopów,
@@ -16,8 +16,9 @@ Firmowa aplikacja magazynowa Masterpress do:
 ## Konta testowe GitHub Pages
 
 - lider: login `lider`, hasło `lider` — dostęp do wszystkich modułów,
-- magazynier: login `magazynier`, hasło `magazynier` — mapa, dostawy lub
-  wysyłki, dokumentacja, tablica zmianowa i kody kreskowe w magazynie surowców.
+- magazynier: login `magazynier`, hasło `magazynier` — mapa, Lista palet,
+  dostawy lub wysyłki, dokumentacja, tablica zmianowa i kody kreskowe
+  w magazynie surowców.
 
 Konto magazyniera po zalogowaniu otwiera Tablicę zmianową. To demonstracyjny
 podział widoków w statycznej stronie GitHub Pages, a nie docelowe zabezpieczenie
@@ -87,8 +88,10 @@ włączoną na komputerach firmowych. Zatrzymanie aplikacji: `Ctrl+C`.
   CMR korzysta z 24-polowego układu modelu IRU 2007 i nie zawiera logo firmy,
   a WZ jest przygotowane do czytelnego wydruku czarno-białego.
 - Moduł Lista palet jest dostępny wyłącznie w magazynie surowców. Rozróżnia
-  wartość `0` od rodzaju jeszcze niepoliczonego, automatycznie sumuje palety,
-  zapisuje miesiąc, osobę, uwagi i historię pomiarów.
+  wartość `0` od rodzaju jeszcze nieuzupełnionego, obejmuje również Płyty,
+  automatycznie sumuje palety i porównuje wynik ze stanem Magazynu głównego.
+  Liczenie zostaje oznaczone jako zakończone dopiero po uzupełnieniu wszystkich
+  pozycji, zapisaniu oraz przygotowaniu profesjonalnego wydruku PDF.
 - VIKI jest dostępna jako mały przycisk mikrofonu bez panelu czatu. Po ręcznym
   włączeniu czuwa na hasło „VIKI” i korzysta z lokalnego słownika poleceń.
 - Karta mycia obsługuje formularze F-02a, F-02b i F-02c dla magazynu surowców

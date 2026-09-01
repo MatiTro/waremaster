@@ -85,7 +85,7 @@ test("VIKI wraca jako mały moduł głosowy bez okna czatu", () => {
   assert.match(pageSource, /aria-label=\{wakeMode \? "Wyłącz VIKI" : "Włącz VIKI"\}/);
 });
 
-test("wersja GitHub Pages rozdziela konto lidera i magazyniera", () => {
+test("wersja GitHub Pages rozdziela konto lidera i magazyniera", async () => {
   assert.match(pageSource, /type UserRole = "leader" \| "warehouse_worker"/);
   assert.match(pageSource, /username: "lider"/);
   assert.match(pageSource, /password: "lider"/);
@@ -95,6 +95,7 @@ test("wersja GitHub Pages rozdziela konto lidera i magazyniera", () => {
   assert.match(pageSource, /const warehouseWorkerViews = new Set<View>/);
   for (const allowed of [
     '"map"',
+    '"palletcount"',
     '"deliveries"',
     '"shipments"',
     '"shiftboard"',
@@ -103,10 +104,19 @@ test("wersja GitHub Pages rozdziela konto lidera i magazyniera", () => {
   ]) assert.match(pageSource, new RegExp(allowed));
   assert.match(pageSource, /stored\.role === "warehouse_worker" \? "shiftboard" : "dashboard"/);
   assert.match(pageSource, /className="login-screen"/);
+  assert.match(pageSource, /masterpress-login-logo\.png/);
+  assert.match(pageSource, /Każda operacja/);
+  assert.match(pageSource, /className="login-capability-strip"/);
+  assert.equal(pageSource.includes("przygotowanym do pracy na tablecie"), false);
   assert.match(pageSource, /Warehouse Masterpress/);
   assert.match(pageSource, /Wersja demonstracyjna GitHub Pages/);
   assert.match(pageSource, /className="sidebar-account"/);
   assert.match(pageSource, /Ten moduł jest dostępny na koncie lidera/);
+  const loginLogo = await stat(new URL(
+    "../public/masterpress-login-logo.png",
+    import.meta.url,
+  ));
+  assert.ok(loginLogo.size > 10_000);
 });
 
 test("portal rozdziela magazyn surowców i wyrobów gotowych", () => {
@@ -220,7 +230,7 @@ test("karta przeglądarki używa sygnetu Masterpress", () => {
   assert.equal(indexSource.includes("favicon.svg"), false);
 });
 
-test("Lista palet jest dostępna tylko w magazynie surowców i nie zawiera danych demonstracyjnych", () => {
+test("Lista palet jest dostępna magazynierowi w surowcach i kończy się raportem", () => {
   assert.match(pageSource, /id: "palletcount"/);
   assert.equal((pageSource.match(/id: "palletcount"/g) ?? []).length, 1);
   assert.match(pageSource, /warehouseArea === "raw" && activeView === "palletcount"/);
@@ -231,6 +241,7 @@ test("Lista palet jest dostępna tylko w magazynie surowców i nie zawiera danyc
     "Papier kredowy",
     "Wiadra",
     "Folia CS i laminat",
+    "Płyty",
     "Inne",
   ]) assert.match(palletCountSource, new RegExp(category));
   assert.match(palletCountSource, /pallet-count:draft:v1/);
@@ -238,7 +249,18 @@ test("Lista palet jest dostępna tylko w magazynie surowców i nie zawiera danyc
   assert.match(palletCountSource, /Record<CategoryId, number \| null>/);
   assert.match(palletCountSource, /\+5 palet/);
   assert.match(palletCountSource, /Wpisz 0/);
-  assert.match(palletCountSource, /Zapisz wynik/);
+  assert.match(palletCountSource, /Zapisz i drukuj PDF/);
+  assert.match(palletCountSource, /const allCategoriesEntered/);
+  assert.match(palletCountSource, /completedAt/);
+  assert.match(palletCountSource, /systemPallets/);
+  assert.match(palletCountSource, /localWarehouseSnapshot\.A/);
+  assert.match(palletCountSource, /pallet-count-print-document/);
+  assert.match(palletCountSource, /Protokół ręcznego liczenia palet/);
+  assert.match(palletCountSource, /Gotowe do zatwierdzenia/);
+  assert.match(palletCountSource, /Policzono i zapisano/);
+  assert.equal(palletCountSource.includes("POSTĘP LICZENIA"), false);
+  assert.equal(palletCountSource.includes("{progress}%"), false);
+  assert.match(globalStyles, /@page pallet-count-report/);
   assert.equal(palletCountSource.includes("initialPallet"), false);
 });
 

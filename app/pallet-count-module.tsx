@@ -4,12 +4,14 @@ import {
   CalendarDays,
   CheckCircle2,
   ClipboardList,
+  Database,
+  FileDown,
   History,
   Minus,
   PackageOpen,
   Plus,
+  Printer,
   RotateCcw,
-  Save,
   Trash2,
   UserRound,
 } from "lucide-react";
@@ -19,6 +21,10 @@ import {
   workforceStorageKeysByArea,
   type Employee,
 } from "./workforce-model";
+import {
+  inventoryDataAvailable,
+  localWarehouseSnapshot,
+} from "./warehouse-model";
 
 export const palletCountCategories = [
   { id: "shrink-film", label: "Folia termokurczliwa", short: "Folia termokurczliwa" },
@@ -27,6 +33,7 @@ export const palletCountCategories = [
   { id: "coated-paper", label: "Papier kredowy", short: "Papier kredowy" },
   { id: "buckets", label: "Wiadra", short: "Wiadra" },
   { id: "cs-film-laminate", label: "Folia CS i laminat", short: "Folia CS i laminat" },
+  { id: "plates", label: "Płyty", short: "Płyty" },
   { id: "other", label: "Inne", short: "Inne" },
 ] as const;
 
@@ -40,10 +47,12 @@ type PalletCountDraft = {
   note: string;
   counts: PalletCounts;
   updatedAt: string;
+  completedAt: string;
 };
 
 type PalletCountRecord = PalletCountDraft & {
   savedAt: string;
+  systemPallets: number | null;
 };
 
 const draftStorageKey = "warehouse-masterpress:pallet-count:draft:v1";
@@ -73,6 +82,7 @@ function createDraft(): PalletCountDraft {
     note: "",
     counts: emptyCounts(),
     updatedAt: new Date().toISOString(),
+    completedAt: "",
   };
 }
 
@@ -116,6 +126,13 @@ function normalizeCount(value: number) {
   return Math.max(0, Math.min(99_999, Math.trunc(value)));
 }
 
+function totalCounts(counts: PalletCounts) {
+  return palletCountCategories.reduce(
+    (sum, category) => sum + (counts[category.id] ?? 0),
+    0,
+  );
+}
+
 export function PalletCountModule() {
   const [ready, setReady] = useState(false);
   const [draft, setDraft] = useState<PalletCountDraft>(() => createDraft());
@@ -123,6 +140,9 @@ export function PalletCountModule() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [undoStack, setUndoStack] = useState<PalletCounts[]>([]);
   const [saveMessage, setSaveMessage] = useState("");
+  const [saveError, setSaveError] = useState(false);
+  const [printActive, setPrintActive] = useState(false);
+  const [printRecord, setPrintRecord] = useState<PalletCountRecord | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -141,22 +161,37 @@ export function PalletCountModule() {
 
   useEffect(() => {
     if (!saveMessage) return;
-    const timer = window.setTimeout(() => setSaveMessage(""), 2600);
+    const timer = window.setTimeout(() => {
+      setSaveMessage("");
+      setSaveError(false);
+    }, 3600);
     return () => window.clearTimeout(timer);
   }, [saveMessage]);
 
-  const total = useMemo(
-    () => palletCountCategories.reduce(
-      (sum, category) => sum + (draft.counts[category.id] ?? 0),
-      0,
-    ),
-    [draft.counts],
-  );
+  useEffect(() => {
+    const finish = () => setPrintActive(false);
+    window.addEventListener("afterprint", finish);
+    return () => window.removeEventListener("afterprint", finish);
+  }, []);
+
+  const total = useMemo(() => totalCounts(draft.counts), [draft.counts]);
   const countedCategories = palletCountCategories.filter(
     (category) => draft.counts[category.id] !== null,
   ).length;
-  const progress = Math.round((countedCategories / palletCountCategories.length) * 100);
-  const lastSaved = history.find((record) => record.id === draft.id)?.savedAt || "";
+  const allCategoriesEntered = countedCategories === palletCountCategories.length;
+  const lastSavedRecord = history.find((record) => record.id === draft.id);
+  const lastSaved = lastSavedRecord?.savedAt || "";
+  const sessionCompleted = Boolean(
+    lastSavedRecord && draft.completedAt === lastSavedRecord.savedAt,
+  );
+  const systemPallets = inventoryDataAvailable
+    ? localWarehouseSnapshot.A
+    : null;
+  const difference = systemPallets === null ? null : total - systemPallets;
+  const printTotal = printRecord ? totalCounts(printRecord.counts) : 0;
+  const printDifference = printRecord?.systemPallets == null
+    ? null
+    : printTotal - printRecord.systemPallets;
 
   function updateCount(id: CategoryId, next: number | null) {
     setUndoStack((current) => [...current.slice(-19), { ...draft.counts }]);
@@ -164,6 +199,18 @@ export function PalletCountModule() {
       ...current,
       counts: { ...current.counts, [id]: next === null ? null : normalizeCount(next) },
       updatedAt: new Date().toISOString(),
+      completedAt: "",
+    }));
+  }
+
+  function updateDraftMeta(
+    patch: Partial<Pick<PalletCountDraft, "period" | "countedBy" | "note">>,
+  ) {
+    setDraft((current) => ({
+      ...current,
+      ...patch,
+      updatedAt: new Date().toISOString(),
+      completedAt: "",
     }));
   }
 
@@ -174,6 +221,7 @@ export function PalletCountModule() {
       ...current,
       counts: previous,
       updatedAt: new Date().toISOString(),
+      completedAt: "",
     }));
     setUndoStack((current) => current.slice(0, -1));
   }
@@ -185,23 +233,50 @@ export function PalletCountModule() {
     )) return;
     setDraft(createDraft());
     setUndoStack([]);
+    setSaveError(false);
     setSaveMessage("Rozpoczęto nowe liczenie");
   }
 
-  function saveResult() {
+  function saveAndPrint() {
+    if (!allCategoriesEntered) {
+      setSaveError(true);
+      setSaveMessage(
+        "Uzupełnij wszystkie pozycje. Jeśli danego rodzaju nie ma, wpisz 0.",
+      );
+      return;
+    }
     const now = new Date().toISOString();
-    const record: PalletCountRecord = { ...draft, savedAt: now };
+    const completedDraft: PalletCountDraft = {
+      ...draft,
+      updatedAt: now,
+      completedAt: now,
+    };
+    const record: PalletCountRecord = {
+      ...completedDraft,
+      savedAt: now,
+      systemPallets,
+    };
     const nextHistory = [
       record,
       ...history.filter((entry) => entry.id !== draft.id),
     ].slice(0, 24);
+    setDraft(completedDraft);
     setHistory(nextHistory);
     window.localStorage.setItem(historyStorageKey, JSON.stringify(nextHistory));
-    setSaveMessage(
-      countedCategories === palletCountCategories.length
-        ? "Kompletne liczenie zostało zapisane"
-        : `Zapisano wynik roboczy (${countedCategories}/${palletCountCategories.length} rodzajów)`,
-    );
+    setPrintRecord(record);
+    setPrintActive(true);
+    setSaveError(false);
+    setSaveMessage("Liczenie zatwierdzone. Otwieram dokument do wydruku lub zapisu PDF.");
+    window.setTimeout(() => window.print(), 100);
+  }
+
+  function printSavedRecord(record: PalletCountRecord) {
+    setPrintRecord({
+      ...record,
+      systemPallets: record.systemPallets ?? null,
+    });
+    setPrintActive(true);
+    window.setTimeout(() => window.print(), 100);
   }
 
   function restoreRecord(record: PalletCountRecord) {
@@ -212,8 +287,10 @@ export function PalletCountModule() {
       note: record.note,
       counts: { ...emptyCounts(), ...record.counts },
       updatedAt: new Date().toISOString(),
+      completedAt: record.savedAt,
     });
     setUndoStack([]);
+    setSaveError(false);
     setSaveMessage("Wczytano zapisane liczenie");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -231,8 +308,8 @@ export function PalletCountModule() {
           <span>RĘCZNE LICZENIE · MAGAZYN SUROWCÓW</span>
           <h2>Lista palet</h2>
           <p>
-            Duże liczniki do wygodnego podsumowania rodzajów surowca podczas
-            obchodu magazynu z tabletem.
+            Wygodne liczenie rodzajów surowca, porównanie ze stanem systemowym
+            Magazynu głównego i gotowy dokument do zatwierdzenia.
           </p>
         </div>
         <div className="pallet-count-actions">
@@ -247,15 +324,18 @@ export function PalletCountModule() {
           <button className="secondary-button" onClick={startNewCount} type="button">
             <Plus /> Nowe liczenie
           </button>
-          <button className="primary-button" onClick={saveResult} type="button">
-            <Save /> Zapisz wynik
+          <button className="primary-button" onClick={saveAndPrint} type="button">
+            <FileDown /> Zapisz i drukuj PDF
           </button>
         </div>
       </section>
 
       {saveMessage && (
-        <div className="pallet-save-message" role="status">
-          <CheckCircle2 /> {saveMessage}
+        <div
+          className={`pallet-save-message ${saveError ? "danger" : ""}`}
+          role="status"
+        >
+          {saveError ? <ClipboardList /> : <CheckCircle2 />} {saveMessage}
         </div>
       )}
 
@@ -264,22 +344,33 @@ export function PalletCountModule() {
           <span><PackageOpen /></span>
           <div><small>RAZEM</small><strong>{total}</strong><p>palet surowca</p></div>
         </article>
-        <article className="panel pallet-progress-card">
+        <article className="panel pallet-reconciliation-card">
           <header>
-            <div><small>POSTĘP LICZENIA</small><strong>{countedCategories}/{palletCountCategories.length} rodzajów</strong></div>
-            <b>{progress}%</b>
+            <span><Database /></span>
+            <div>
+              <small>MAGAZYN GŁÓWNY</small>
+              <strong>Porównanie ze stanem systemowym</strong>
+            </div>
           </header>
-          <i><span style={{ width: `${progress}%` }} /></i>
+          <div className="pallet-reconciliation-values">
+            <span><small>STAN SYSTEMOWY</small><strong>{systemPallets ?? "—"}</strong></span>
+            <span><small>POLICZONO RĘCZNIE</small><strong>{total}</strong></span>
+            <span className={difference === null ? "neutral" : difference === 0 ? "match" : "mismatch"}>
+              <small>RÓŻNICA</small>
+              <strong>{difference === null ? "—" : difference > 0 ? `+${difference}` : difference}</strong>
+            </span>
+          </div>
           <p>
-            Puste pole oznacza „niepoliczone”. Wartość 0 oznacza, że rodzaj
-            został sprawdzony i nie ma żadnej palety.
+            {systemPallets === null
+              ? "Stan systemowy pojawi się automatycznie po podłączeniu danych magazynowych."
+              : "Różnica pokazuje wynik liczenia ręcznego względem bieżącego stanu aplikacji."}
           </p>
         </article>
         <article className="panel pallet-session-card">
           <label>
             <CalendarDays /> Miesiąc liczenia
             <input
-              onChange={(event) => setDraft((current) => ({ ...current, period: event.target.value }))}
+              onChange={(event) => updateDraftMeta({ period: event.target.value })}
               type="month"
               value={draft.period}
             />
@@ -288,7 +379,7 @@ export function PalletCountModule() {
             <UserRound /> Osoba licząca
             <input
               list="pallet-count-employees"
-              onChange={(event) => setDraft((current) => ({ ...current, countedBy: event.target.value }))}
+              onChange={(event) => updateDraftMeta({ countedBy: event.target.value })}
               placeholder="Opcjonalnie"
               value={draft.countedBy}
             />
@@ -298,31 +389,55 @@ export function PalletCountModule() {
               ))}
             </datalist>
           </label>
-          <small>Ostatni zapis: {formatSavedAt(lastSaved)}</small>
+          <div className={`pallet-session-status ${sessionCompleted ? "complete" : allCategoriesEntered ? "ready" : "active"}`}>
+            <i />
+            <span>
+              <small>STATUS LICZENIA</small>
+              <strong>
+                {sessionCompleted
+                  ? "Policzono i zapisano"
+                  : allCategoriesEntered
+                    ? "Gotowe do zatwierdzenia"
+                    : "Liczenie w toku"}
+              </strong>
+            </span>
+          </div>
+          <small>Ostatnie zatwierdzenie: {formatSavedAt(lastSaved)}</small>
         </article>
       </section>
 
       <section className="pallet-counter-grid">
         {palletCountCategories.map((category, index) => {
           const value = draft.counts[category.id];
-          const counted = value !== null;
+          const entered = value !== null;
+          const state = sessionCompleted && entered
+            ? "verified"
+            : entered
+              ? "entered"
+              : "pending";
           return (
             <article
-              className={`panel pallet-counter-card ${counted ? "counted" : "pending"}`}
+              className={`panel pallet-counter-card ${state}`}
               key={category.id}
             >
               <header>
                 <span>{String(index + 1).padStart(2, "0")}</span>
                 <div>
-                  <small>{counted ? "POLICZONO" : "DO POLICZENIA"}</small>
+                  <small>
+                    {state === "verified"
+                      ? "ZATWIERDZONE"
+                      : state === "entered"
+                        ? "WPROWADZONO"
+                        : "DO UZUPEŁNIENIA"}
+                  </small>
                   <h3>{category.label}</h3>
                 </div>
-                {counted && <CheckCircle2 />}
+                {state === "verified" && <CheckCircle2 />}
               </header>
               <div className="pallet-counter-control">
                 <button
                   aria-label={`Odejmij paletę: ${category.label}`}
-                  disabled={!counted || value === 0}
+                  disabled={!entered || value === 0}
                   onClick={() => updateCount(category.id, Math.max(0, (value ?? 0) - 1))}
                   type="button"
                 >
@@ -355,7 +470,7 @@ export function PalletCountModule() {
               <footer>
                 <button onClick={() => updateCount(category.id, (value ?? 0) + 5)} type="button">+5 palet</button>
                 <button onClick={() => updateCount(category.id, 0)} type="button">Wpisz 0</button>
-                <button className="clear" disabled={!counted} onClick={() => updateCount(category.id, null)} type="button">Wyczyść</button>
+                <button className="clear" disabled={!entered} onClick={() => updateCount(category.id, null)} type="button">Wyczyść</button>
               </footer>
             </article>
           );
@@ -366,7 +481,7 @@ export function PalletCountModule() {
         <label>
           <ClipboardList /> Uwagi do liczenia
           <textarea
-            onChange={(event) => setDraft((current) => ({ ...current, note: event.target.value }))}
+            onChange={(event) => updateDraftMeta({ note: event.target.value })}
             placeholder="Np. palety uszkodzone, nieoznaczone lub wymagające ponownego sprawdzenia…"
             rows={3}
             value={draft.note}
@@ -386,16 +501,22 @@ export function PalletCountModule() {
                 (sum, category) => sum + (record.counts[category.id] ?? 0),
                 0,
               );
-              const recordCounted = palletCountCategories.filter(
-                (category) => record.counts[category.id] !== null,
-              ).length;
+              const recordSystem = record.systemPallets ?? null;
+              const recordDifference = recordSystem === null
+                ? null
+                : recordTotal - recordSystem;
               return (
                 <article key={record.id}>
                   <span><History /></span>
                   <div className="pallet-history-main">
                     <small>{formatPeriod(record.period)} · {formatSavedAt(record.savedAt)}</small>
                     <strong>{record.countedBy || "Nie podano osoby"}</strong>
-                    <p>{recordCounted}/{palletCountCategories.length} rodzajów · {recordTotal} palet</p>
+                    <p>
+                      Zatwierdzono · {recordTotal} palet
+                      {recordDifference === null
+                        ? " · brak stanu systemowego"
+                        : ` · różnica ${recordDifference > 0 ? "+" : ""}${recordDifference}`}
+                    </p>
                   </div>
                   <div className="pallet-history-breakdown">
                     {palletCountCategories.map((category) => (
@@ -406,6 +527,7 @@ export function PalletCountModule() {
                   </div>
                   <div className="pallet-history-actions">
                     <button onClick={() => restoreRecord(record)} type="button">Wczytaj</button>
+                    <button aria-label="Drukuj zapis" onClick={() => printSavedRecord(record)} type="button"><Printer /></button>
                     <button aria-label="Usuń zapis" className="delete" onClick={() => deleteRecord(record.id)} type="button"><Trash2 /></button>
                   </div>
                 </article>
@@ -415,10 +537,76 @@ export function PalletCountModule() {
         ) : (
           <div className="pallet-history-empty">
             <History />
-            <div><strong>Brak zapisanych pomiarów</strong><span>Pierwszy wynik pojawi się tutaj po wybraniu „Zapisz wynik”.</span></div>
+            <div><strong>Brak zatwierdzonych pomiarów</strong><span>Pierwszy wynik pojawi się po zapisaniu i przygotowaniu PDF.</span></div>
           </div>
         )}
       </section>
+
+      {printRecord && (
+        <div
+          className={`pallet-count-print-document ${printActive ? "print-active" : ""}`}
+        >
+          <section className="pallet-count-report">
+            <header>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                alt="Masterpress"
+                src={`${import.meta.env.BASE_URL}masterpress-logo-dark.png`}
+              />
+              <div>
+                <small>MAGAZYN SUROWCÓW · MAGAZYN GŁÓWNY</small>
+                <h1>Protokół ręcznego liczenia palet</h1>
+                <p>{formatPeriod(printRecord.period)}</p>
+              </div>
+              <aside>
+                <small>DATA ZATWIERDZENIA</small>
+                <strong>{formatSavedAt(printRecord.savedAt)}</strong>
+              </aside>
+            </header>
+
+            <div className="pallet-report-summary">
+              <span><small>POLICZONO RĘCZNIE</small><strong>{printTotal}</strong><em>palet</em></span>
+              <span><small>STAN SYSTEMOWY</small><strong>{printRecord.systemPallets ?? "—"}</strong><em>palet</em></span>
+              <span><small>RÓŻNICA</small><strong>{printDifference === null ? "—" : printDifference > 0 ? `+${printDifference}` : printDifference}</strong><em>palet</em></span>
+              <span><small>OSOBA LICZĄCA</small><strong>{printRecord.countedBy || "—"}</strong></span>
+            </div>
+
+            <table>
+              <thead>
+                <tr><th>Lp.</th><th>Rodzaj surowca</th><th>Liczba palet</th><th>Potwierdzenie</th></tr>
+              </thead>
+              <tbody>
+                {palletCountCategories.map((category, index) => (
+                  <tr key={category.id}>
+                    <td>{index + 1}</td>
+                    <td>{category.label}</td>
+                    <td><strong>{printRecord.counts[category.id] ?? 0}</strong></td>
+                    <td>✓ uwzględniono w podsumowaniu</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr><td colSpan={2}>RAZEM</td><td>{printTotal}</td><td /></tr>
+              </tfoot>
+            </table>
+
+            <section className="pallet-report-notes">
+              <small>UWAGI DO LICZENIA</small>
+              <p>{printRecord.note || "Brak uwag."}</p>
+            </section>
+
+            <div className="pallet-report-signatures">
+              <span><i />Osoba licząca</span>
+              <span><i />Osoba weryfikująca</span>
+            </div>
+
+            <footer>
+              <span>Warehouse Masterpress</span>
+              <span>Dokument wygenerowany automatycznie</span>
+            </footer>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
