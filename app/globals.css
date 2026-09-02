@@ -1318,7 +1318,338 @@
   }
 }
 
-/* Logowanie v4 — chłodny terminal logistyczny */
+/* Logowanie v5 — jasna hala i karta dostępu */
+.login-screen.login-daylight {
+  position: relative;
+  min-height: 100dvh;
+  grid-template-columns: minmax(0, 1fr) minmax(430px, 31vw);
+  overflow: hidden;
+  background: #eef4f7;
+}
+.login-screen.login-daylight .login-brand-panel {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  padding: clamp(34px, 4vw, 62px) clamp(36px, 4.8vw, 76px);
+  overflow: hidden;
+  background: #eaf1f4;
+  box-shadow: none;
+}
+.login-screen.login-daylight .login-brand-panel::before,
+.login-screen.login-daylight .login-brand-panel::after,
+.login-screen.login-daylight .login-brand-glow {
+  display: none;
+}
+.login-screen.login-daylight .login-warehouse-backdrop {
+  z-index: 0;
+  background-position: center;
+  background-size: cover;
+  filter: saturate(0.82) contrast(0.99) brightness(1.03);
+  transform: scale(1.01);
+}
+.login-screen.login-daylight .login-warehouse-backdrop::after {
+  background:
+    linear-gradient(90deg, rgba(245, 249, 251, 0.1) 0%, rgba(247, 250, 252, 0.12) 55%, rgba(244, 249, 251, 0.78) 100%),
+    linear-gradient(0deg, rgba(229, 238, 243, 0.78) 0%, transparent 42%);
+}
+.login-screen.login-daylight .login-brand-lockup,
+.login-screen.login-daylight .login-brand-copy,
+.login-screen.login-daylight .login-capability-strip,
+.login-screen.login-daylight .login-brand-status {
+  position: relative;
+  z-index: 2;
+}
+.login-screen.login-daylight .login-brand-lockup {
+  width: auto;
+  justify-content: flex-start;
+  padding: 0;
+  border: 0;
+}
+.login-screen.login-daylight .login-brand-lockup img {
+  width: clamp(245px, 22vw, 335px);
+  max-height: 78px;
+  filter: drop-shadow(0 5px 13px rgba(255, 255, 255, 0.72));
+}
+.login-screen.login-daylight .login-brand-copy {
+  width: min(590px, 78%);
+  max-width: none;
+  margin: auto 0 118px;
+  padding: 28px 32px 30px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  box-shadow: 0 22px 60px rgba(22, 68, 94, 0.11);
+  backdrop-filter: blur(16px);
+}
+.login-screen.login-daylight .login-brand-copy h1 {
+  margin: 0 0 15px;
+  color: #082e4c;
+  font-size: clamp(43px, 4.4vw, 68px);
+  font-weight: 760;
+  line-height: 0.98;
+  letter-spacing: -0.052em;
+  text-shadow: none;
+}
+.login-screen.login-daylight .login-brand-copy h1 em {
+  color: #2577a5;
+  font-style: normal;
+  font-weight: 620;
+  text-shadow: none;
+}
+.login-screen.login-daylight .login-brand-copy p {
+  max-width: 460px;
+  margin: 0;
+  color: #4e6878;
+  font-size: 16px;
+  line-height: 1.55;
+  text-shadow: none;
+}
+.login-screen.login-daylight .login-capability-strip {
+  position: absolute;
+  right: clamp(36px, 4.8vw, 76px);
+  bottom: clamp(34px, 4vw, 58px);
+  left: clamp(36px, 4.8vw, 76px);
+  max-width: 680px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  overflow: visible;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.login-screen.login-daylight .login-capability-strip article {
+  min-height: 70px;
+  padding: 13px 16px;
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid rgba(255, 255, 255, 0.96);
+  border-radius: 9px;
+  box-shadow: 0 12px 32px rgba(17, 65, 91, 0.1);
+  backdrop-filter: blur(14px);
+}
+.login-screen.login-daylight .login-capability-strip article:not(:last-child) {
+  border-right-color: rgba(255, 255, 255, 0.96);
+}
+.login-screen.login-daylight .login-capability-strip article > span {
+  color: #176b9a;
+  background: #e6f2f7;
+  border: 1px solid #d5e8f1;
+  border-radius: 6px;
+}
+.login-screen.login-daylight .login-capability-strip small {
+  color: #6e8795;
+  font-size: 11px;
+}
+.login-screen.login-daylight .login-capability-strip strong {
+  margin-top: 4px;
+  color: #0a3453;
+  font-size: 14px;
+}
+.login-screen.login-daylight .login-brand-status {
+  position: absolute;
+  top: clamp(34px, 4vw, 58px);
+  right: clamp(36px, 4.8vw, 76px);
+  gap: 9px;
+  padding: 10px 13px;
+  color: #34566a;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.96);
+  border-radius: 99px;
+  box-shadow: 0 9px 26px rgba(20, 66, 91, 0.08);
+  backdrop-filter: blur(12px);
+  font-size: 12px;
+}
+.login-screen.login-daylight .login-brand-status i {
+  background: #2da980;
+  box-shadow: 0 0 0 4px rgba(45, 169, 128, 0.12);
+}
+.login-screen.login-daylight .login-form-panel {
+  position: relative;
+  z-index: 3;
+  min-width: 0;
+  padding: clamp(28px, 3.3vw, 54px);
+  background: rgba(248, 251, 252, 0.95);
+  border-left: 1px solid rgba(148, 175, 189, 0.36);
+  box-shadow: -22px 0 70px rgba(17, 64, 89, 0.1);
+  backdrop-filter: blur(18px);
+}
+.login-screen.login-daylight .login-form-panel::before {
+  display: none;
+}
+.login-screen.login-daylight .login-form-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 430px;
+  overflow: hidden;
+  padding: clamp(32px, 3.2vw, 46px);
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid #dce6eb;
+  border-radius: 18px;
+  box-shadow: 0 28px 70px rgba(11, 55, 80, 0.12);
+}
+.login-screen.login-daylight .login-form-wrap::before {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 5px;
+  display: block;
+  content: "";
+  background: linear-gradient(90deg, #06315b, #3b8fba, #9bc9de);
+}
+.login-screen.login-daylight .login-eyebrow {
+  color: #527084;
+  font-size: 12px;
+}
+.login-screen.login-daylight .login-eyebrow svg {
+  color: #2479a7;
+}
+.login-screen.login-daylight .login-form-wrap h2 {
+  margin-top: 15px;
+  color: #082e4c;
+  font-size: clamp(40px, 3.6vw, 50px);
+}
+.login-screen.login-daylight .login-form-wrap > header p {
+  color: #687e8c;
+  font-size: 15px;
+}
+.login-screen.login-daylight .login-form label {
+  color: #29485d;
+  font-size: 14px;
+}
+.login-screen.login-daylight .login-input {
+  min-height: 58px;
+  background: #fdfefe;
+  border: 1px solid #cddbe2;
+  border-radius: 8px;
+  box-shadow: none;
+}
+.login-screen.login-daylight .login-input:focus-within {
+  border-color: #3786ae;
+  box-shadow: 0 0 0 4px rgba(55, 134, 174, 0.12);
+}
+.login-screen.login-daylight .login-input input {
+  font-size: 15px;
+}
+.login-screen.login-daylight .login-submit {
+  min-height: 58px;
+  background: linear-gradient(115deg, #07325a 0%, #1f76a4 100%);
+  border-radius: 8px;
+  box-shadow: 0 14px 28px rgba(11, 77, 116, 0.2);
+  font-size: 14px;
+}
+.login-screen.login-daylight .login-submit:hover {
+  background: linear-gradient(115deg, #0b416f 0%, #2b8ab8 100%);
+}
+.login-screen.login-daylight .login-test-accounts > span {
+  color: #778c98;
+  font-size: 12px;
+}
+.login-screen.login-daylight .login-test-accounts > button {
+  min-height: 60px;
+  background: #f8fafb;
+  border: 1px solid #dbe5ea;
+  border-radius: 8px;
+  box-shadow: none;
+}
+.login-screen.login-daylight .login-test-accounts > button:hover {
+  background: #fff;
+  border-color: #9dbdcd;
+  box-shadow: 0 8px 22px rgba(18, 73, 103, 0.08);
+}
+
+@media (max-width: 1120px) {
+  .login-screen.login-daylight {
+    grid-template-columns: minmax(360px, 1fr) minmax(400px, 0.9fr);
+  }
+  .login-screen.login-daylight .login-brand-copy {
+    width: min(520px, 90%);
+  }
+  .login-screen.login-daylight .login-brand-copy h1 {
+    font-size: 49px;
+  }
+  .login-screen.login-daylight .login-capability-strip {
+    grid-template-columns: 1fr;
+    max-width: 245px;
+  }
+  .login-screen.login-daylight .login-capability-strip article {
+    min-height: 56px;
+  }
+  .login-screen.login-daylight .login-capability-strip article:nth-child(n + 2) {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .login-screen.login-daylight {
+    display: block;
+    overflow: auto;
+  }
+  .login-screen.login-daylight .login-brand-panel {
+    min-height: 310px;
+    padding: 24px;
+  }
+  .login-screen.login-daylight .login-warehouse-backdrop {
+    background-position: 38% center;
+  }
+  .login-screen.login-daylight .login-brand-lockup img {
+    width: 210px;
+  }
+  .login-screen.login-daylight .login-brand-status {
+    top: 22px;
+    right: 22px;
+  }
+  .login-screen.login-daylight .login-brand-copy {
+    width: min(440px, calc(100% - 48px));
+    margin: 68px 0 0;
+    padding: 20px 22px;
+    border-radius: 12px;
+  }
+  .login-screen.login-daylight .login-brand-copy h1 {
+    margin-bottom: 10px;
+    font-size: 35px;
+  }
+  .login-screen.login-daylight .login-brand-copy p {
+    font-size: 14px;
+  }
+  .login-screen.login-daylight .login-capability-strip {
+    display: none;
+  }
+  .login-screen.login-daylight .login-form-panel {
+    min-height: calc(100dvh - 310px);
+    padding: 28px 20px 40px;
+    border: 0;
+    box-shadow: none;
+  }
+  .login-screen.login-daylight .login-form-wrap {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 30px 24px;
+    border-radius: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-screen.login-daylight .login-brand-panel {
+    min-height: 265px;
+  }
+  .login-screen.login-daylight .login-brand-status {
+    display: none;
+  }
+  .login-screen.login-daylight .login-brand-copy {
+    width: calc(100% - 24px);
+    margin-top: 50px;
+  }
+  .login-screen.login-daylight .login-brand-copy h1 {
+    font-size: 31px;
+  }
+  .login-screen.login-daylight .login-brand-copy p {
+    display: none;
+  }
+}
+
+/* Poprzedni wariant pozostaje niżej jako bezpieczna baza dla starszych ekranów. */
 .login-screen {
   grid-template-columns: minmax(0, 1.62fr) minmax(420px, 0.78fr);
   background: #eef2f5;

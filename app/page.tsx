@@ -590,13 +590,13 @@ function LoginScreen({
   }
 
   return (
-    <main className="login-screen">
+    <main className="login-screen login-daylight">
       <section className="login-brand-panel">
         <div
           aria-hidden="true"
           className="login-warehouse-backdrop"
           style={{
-            backgroundImage: `url(${import.meta.env.BASE_URL}warehouse-login-bg.svg)`,
+            backgroundImage: `url(${import.meta.env.BASE_URL}warehouse-login-daylight.webp)`,
           }}
         />
         <div className="login-brand-glow" />
@@ -604,16 +604,16 @@ function LoginScreen({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             alt="Masterpress"
-            src={`${import.meta.env.BASE_URL}masterpress-login-logo.png`}
+            src={`${import.meta.env.BASE_URL}masterpress-logo-dark.png`}
           />
         </div>
         <div className="login-brand-copy">
           <h1>
-            Logistyka<br />
-            <em>pod kontrolą.</em>
+            Wszystko na<br />
+            <em>swoim miejscu.</em>
           </h1>
           <p>
-            Jeden system dla przepływu towaru, pracy zespołu i obu magazynów.
+            Magazyn surowców i wyrobów gotowych w jednym systemie.
           </p>
         </div>
         <div className="login-capability-strip">
@@ -673,7 +673,7 @@ function LoginScreen({
             </label>
             {error && <p aria-live="polite" className="login-error">{error}</p>}
             <button className="login-submit" type="submit">
-              Przejdź do systemu <ChevronRight />
+              Zaloguj się <ChevronRight />
             </button>
           </form>
 
