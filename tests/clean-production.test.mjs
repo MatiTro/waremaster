@@ -106,12 +106,16 @@ test("wersja GitHub Pages rozdziela konto lidera i magazyniera", async () => {
   assert.match(pageSource, /className="login-screen"/);
   assert.match(pageSource, /masterpress-login-logo\.png/);
   assert.match(pageSource, /warehouse-login-bg\.svg/);
-  assert.match(pageSource, /Magazyn w dobrym/);
+  assert.match(pageSource, /Logistyka/);
+  assert.match(pageSource, /pod kontrolą/);
   assert.match(pageSource, /<h2>Witaj<\/h2>/);
   assert.match(pageSource, /className="login-capability-strip"/);
   assert.match(pageSource, /<strong>Dostawy<\/strong>/);
   assert.match(pageSource, /<strong>Lokalizacje<\/strong>/);
   assert.match(pageSource, /<strong>Wysyłki<\/strong>/);
+  assert.match(pageSource, /PRZYJĘCIE/);
+  assert.match(pageSource, /SKŁADOWANIE/);
+  assert.match(pageSource, /EKSPEDYCJA/);
   assert.equal(pageSource.includes("Witaj ponownie"), false);
   assert.equal(pageSource.includes("CENTRUM OPERACJI MAGAZYNOWYCH"), false);
   assert.equal(pageSource.includes('className="login-orbit"'), false);

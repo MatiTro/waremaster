@@ -55,29 +55,29 @@
         <path d="M0 0 166-13v227L0 221Z" fill="#051e35" stroke="#6da1bf" stroke-width="5"/>
         <path d="m17 26 132-10M17 56l132-10M17 86l132-10M17 116l132-10M17 146l132-10M17 176l132-10" stroke="#346a8e" stroke-width="4" opacity=".7"/>
         <path d="M-17 224 182 207v24L-17 250Z" fill="#06192a"/>
-        <rect x="-21" y="192" width="14" height="42" rx="3" fill="#f0b429"/>
-        <rect x="177" y="176" width="14" height="42" rx="3" fill="#f0b429"/>
+        <rect x="-21" y="192" width="14" height="42" rx="3" fill="#8fbad1"/>
+        <rect x="177" y="176" width="14" height="42" rx="3" fill="#8fbad1"/>
       </g>
       <g transform="translate(670 449)">
         <path d="M0 0 166-13v227L0 221Z" fill="url(#door)" stroke="#77aac5" stroke-width="5"/>
         <path d="m17 26 132-10M17 56l132-10M17 86l132-10M17 116l132-10M17 146l132-10M17 176l132-10" stroke="#346a8e" stroke-width="4" opacity=".7"/>
         <path d="M-17 224 182 207v24L-17 250Z" fill="#06192a"/>
-        <rect x="-21" y="192" width="14" height="42" rx="3" fill="#f0b429"/>
-        <rect x="177" y="176" width="14" height="42" rx="3" fill="#f0b429"/>
+        <rect x="-21" y="192" width="14" height="42" rx="3" fill="#8fbad1"/>
+        <rect x="177" y="176" width="14" height="42" rx="3" fill="#8fbad1"/>
       </g>
       <g transform="translate(885 431)">
         <path d="M0 0 166-13v227L0 221Z" fill="url(#door)" stroke="#77aac5" stroke-width="5"/>
         <path d="m17 26 132-10M17 56l132-10M17 86l132-10M17 116l132-10M17 146l132-10M17 176l132-10" stroke="#346a8e" stroke-width="4" opacity=".7"/>
         <path d="M-17 224 182 207v24L-17 250Z" fill="#06192a"/>
-        <rect x="-21" y="192" width="14" height="42" rx="3" fill="#f0b429"/>
-        <rect x="177" y="176" width="14" height="42" rx="3" fill="#f0b429"/>
+        <rect x="-21" y="192" width="14" height="42" rx="3" fill="#8fbad1"/>
+        <rect x="177" y="176" width="14" height="42" rx="3" fill="#8fbad1"/>
       </g>
       <g transform="translate(1100 413)">
         <path d="M0 0 166-13v227L0 221Z" fill="url(#door)" stroke="#77aac5" stroke-width="5"/>
         <path d="m17 26 132-10M17 56l132-10M17 86l132-10M17 116l132-10M17 146l132-10M17 176l132-10" stroke="#346a8e" stroke-width="4" opacity=".7"/>
         <path d="M-17 224 182 207v24L-17 250Z" fill="#06192a"/>
-        <rect x="-21" y="192" width="14" height="42" rx="3" fill="#f0b429"/>
-        <rect x="177" y="176" width="14" height="42" rx="3" fill="#f0b429"/>
+        <rect x="-21" y="192" width="14" height="42" rx="3" fill="#8fbad1"/>
+        <rect x="177" y="176" width="14" height="42" rx="3" fill="#8fbad1"/>
       </g>
     </g>
 
@@ -118,11 +118,11 @@
   </g>
 
   <g transform="translate(690 762)" filter="url(#shadow)">
-    <path d="M0 93h148l31 39H22Z" fill="#ecad31"/>
-    <path d="M32 23h82l28 75H20Z" fill="#efb43b"/>
+    <path d="M0 93h148l31 39H22Z" fill="#9db9c9"/>
+    <path d="M32 23h82l28 75H20Z" fill="#dce9ef"/>
     <path d="M48 36h48l18 46H39Z" fill="#123e60"/>
-    <path d="M142 20h13v114h-13zM155 119h105v10H155zM246 49h10v77h-10z" fill="#d69a27"/>
-    <g fill="#071b2d" stroke="#9a7428" stroke-width="6">
+    <path d="M142 20h13v114h-13zM155 119h105v10H155zM246 49h10v77h-10z" fill="#6d91a7"/>
+    <g fill="#071b2d" stroke="#7898aa" stroke-width="6">
       <circle cx="42" cy="126" r="25"/>
       <circle cx="139" cy="126" r="25"/>
     </g>

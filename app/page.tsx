@@ -609,26 +609,25 @@ function LoginScreen({
         </div>
         <div className="login-brand-copy">
           <h1>
-            Magazyn w dobrym<br />
-            <em>rytmie.</em>
+            Logistyka<br />
+            <em>pod kontrolą.</em>
           </h1>
           <p>
-            Dostawy, lokalizacje, wysyłki i praca zespołu — uporządkowane
-            w jednym systemie.
+            Jeden system dla przepływu towaru, pracy zespołu i obu magazynów.
           </p>
         </div>
         <div className="login-capability-strip">
           <article>
             <span><Truck /></span>
-            <div><small>01</small><strong>Dostawy</strong></div>
+            <div><small>PRZYJĘCIE</small><strong>Dostawy</strong></div>
           </article>
           <article>
             <span><MapPin /></span>
-            <div><small>02</small><strong>Lokalizacje</strong></div>
+            <div><small>SKŁADOWANIE</small><strong>Lokalizacje</strong></div>
           </article>
           <article>
             <span><PackageCheck /></span>
-            <div><small>03</small><strong>Wysyłki</strong></div>
+            <div><small>EKSPEDYCJA</small><strong>Wysyłki</strong></div>
           </article>
         </div>
         <div className="login-brand-status">
@@ -640,7 +639,7 @@ function LoginScreen({
       <section className="login-form-panel">
         <div className="login-form-wrap">
           <header>
-            <span className="login-eyebrow"><LockKeyhole /> DOSTĘP DO SYSTEMU</span>
+            <span className="login-eyebrow"><LockKeyhole /> SYSTEM MAGAZYNOWY</span>
             <h2>Witaj</h2>
             <p>Zaloguj się do swojego obszaru operacyjnego.</p>
           </header>
