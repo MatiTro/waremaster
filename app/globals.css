@@ -1322,7 +1322,7 @@
 .login-screen.login-daylight {
   position: relative;
   min-height: 100dvh;
-  grid-template-columns: minmax(0, 1fr) minmax(430px, 31vw);
+  grid-template-columns: minmax(0, 1fr) minmax(560px, 40vw);
   overflow: hidden;
   background: #eef4f7;
 }
@@ -1349,8 +1349,9 @@
 }
 .login-screen.login-daylight .login-warehouse-backdrop::after {
   background:
-    linear-gradient(90deg, rgba(245, 249, 251, 0.1) 0%, rgba(247, 250, 252, 0.12) 55%, rgba(244, 249, 251, 0.78) 100%),
-    linear-gradient(0deg, rgba(229, 238, 243, 0.78) 0%, transparent 42%);
+    linear-gradient(180deg, rgba(0, 40, 85, 0.9) 0%, rgba(0, 40, 85, 0.65) 14%, rgba(0, 40, 85, 0.24) 29%, transparent 48%),
+    linear-gradient(90deg, rgba(245, 249, 251, 0.08) 0%, rgba(247, 250, 252, 0.1) 55%, rgba(244, 249, 251, 0.7) 100%),
+    linear-gradient(0deg, rgba(229, 238, 243, 0.72) 0%, transparent 42%);
 }
 .login-screen.login-daylight .login-brand-lockup,
 .login-screen.login-daylight .login-brand-copy,
@@ -1366,9 +1367,9 @@
   border: 0;
 }
 .login-screen.login-daylight .login-brand-lockup img {
-  width: clamp(245px, 22vw, 335px);
-  max-height: 78px;
-  filter: drop-shadow(0 5px 13px rgba(255, 255, 255, 0.72));
+  width: clamp(250px, 23vw, 350px);
+  max-height: 82px;
+  filter: drop-shadow(0 7px 18px rgba(0, 27, 57, 0.18));
 }
 .login-screen.login-daylight .login-brand-copy {
   width: min(590px, 78%);
@@ -1469,7 +1470,7 @@
   position: relative;
   z-index: 3;
   min-width: 0;
-  padding: clamp(28px, 3.3vw, 54px);
+  padding: clamp(30px, 3vw, 54px);
   background: rgba(248, 251, 252, 0.95);
   border-left: 1px solid rgba(148, 175, 189, 0.36);
   box-shadow: -22px 0 70px rgba(17, 64, 89, 0.1);
@@ -1481,7 +1482,7 @@
 .login-screen.login-daylight .login-form-wrap {
   position: relative;
   width: 100%;
-  max-width: 430px;
+  max-width: 560px;
   overflow: hidden;
   padding: clamp(32px, 3.2vw, 46px);
   background: rgba(255, 255, 255, 0.98);
@@ -1561,7 +1562,7 @@
 
 @media (max-width: 1120px) {
   .login-screen.login-daylight {
-    grid-template-columns: minmax(360px, 1fr) minmax(400px, 0.9fr);
+    grid-template-columns: minmax(360px, 1fr) minmax(480px, 0.95fr);
   }
   .login-screen.login-daylight .login-brand-copy {
     width: min(520px, 90%);
@@ -1581,7 +1582,7 @@
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 840px) {
   .login-screen.login-daylight {
     display: block;
     overflow: auto;
@@ -1594,11 +1595,7 @@
     background-position: 38% center;
   }
   .login-screen.login-daylight .login-brand-lockup img {
-    width: 210px;
-  }
-  .login-screen.login-daylight .login-brand-status {
-    top: 22px;
-    right: 22px;
+    width: 225px;
   }
   .login-screen.login-daylight .login-brand-copy {
     width: min(440px, calc(100% - 48px));
@@ -1633,9 +1630,6 @@
 @media (max-width: 480px) {
   .login-screen.login-daylight .login-brand-panel {
     min-height: 265px;
-  }
-  .login-screen.login-daylight .login-brand-status {
-    display: none;
   }
   .login-screen.login-daylight .login-brand-copy {
     width: calc(100% - 24px);

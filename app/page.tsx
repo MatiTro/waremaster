@@ -604,7 +604,7 @@ function LoginScreen({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             alt="Masterpress"
-            src={`${import.meta.env.BASE_URL}masterpress-logo-dark.png`}
+            src={`${import.meta.env.BASE_URL}masterpress-login-logo.png`}
           />
         </div>
         <div className="login-brand-copy">
@@ -629,10 +629,6 @@ function LoginScreen({
             <span><PackageCheck /></span>
             <div><small>EKSPEDYCJA</small><strong>Wysyłki</strong></div>
           </article>
-        </div>
-        <div className="login-brand-status">
-          <i />
-          <span>System magazynowy Masterpress</span>
         </div>
       </section>
 

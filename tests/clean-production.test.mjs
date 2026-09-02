@@ -104,7 +104,7 @@ test("wersja GitHub Pages rozdziela konto lidera i magazyniera", async () => {
   ]) assert.match(pageSource, new RegExp(allowed));
   assert.match(pageSource, /stored\.role === "warehouse_worker" \? "shiftboard" : "dashboard"/);
   assert.match(pageSource, /className="login-screen login-daylight"/);
-  assert.match(pageSource, /masterpress-logo-dark\.png/);
+  assert.match(pageSource, /masterpress-login-logo\.png/);
   assert.match(pageSource, /warehouse-login-daylight\.webp/);
   assert.match(pageSource, /Wszystko na/);
   assert.match(pageSource, /swoim miejscu/);
@@ -126,7 +126,7 @@ test("wersja GitHub Pages rozdziela konto lidera i magazyniera", async () => {
   assert.match(pageSource, /className="sidebar-account"/);
   assert.match(pageSource, /Ten moduł jest dostępny na koncie lidera/);
   const loginLogo = await stat(new URL(
-    "../public/masterpress-logo-dark.png",
+    "../public/masterpress-login-logo.png",
     import.meta.url,
   ));
   assert.ok(loginLogo.size > 10_000);
@@ -135,6 +135,7 @@ test("wersja GitHub Pages rozdziela konto lidera i magazyniera", async () => {
     import.meta.url,
   ));
   assert.ok(warehouseBackdrop.size > 100_000);
+  assert.equal(pageSource.includes('className="login-brand-status"'), false);
 });
 
 test("portal rozdziela magazyn surowców i wyrobów gotowych", () => {
