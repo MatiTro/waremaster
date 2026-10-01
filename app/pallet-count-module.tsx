@@ -1,4 +1,6 @@
 "use client";
+import { useSharedState } from "./shared-data";
+import { flushSharedWrites, serverMode, getSyncState } from "./shared-storage";
 
 import {
   CalendarDays,
@@ -17,7 +19,6 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
-  safeReadArray,
   workforceStorageKeysByArea,
   type Employee,
 } from "./workforce-model";
@@ -86,21 +87,6 @@ function createDraft(): PalletCountDraft {
   };
 }
 
-function safeReadDraft(): PalletCountDraft | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const parsed = JSON.parse(window.localStorage.getItem(draftStorageKey) || "null");
-    if (!parsed || typeof parsed !== "object") return null;
-    return {
-      ...createDraft(),
-      ...parsed,
-      counts: { ...emptyCounts(), ...(parsed.counts || {}) },
-    };
-  } catch {
-    return null;
-  }
-}
-
 function formatPeriod(value: string) {
   if (!value) return "Bez okresu";
   const [year, month] = value.split("-").map(Number);
@@ -134,30 +120,14 @@ function totalCounts(counts: PalletCounts) {
 }
 
 export function PalletCountModule() {
-  const [ready, setReady] = useState(false);
-  const [draft, setDraft] = useState<PalletCountDraft>(() => createDraft());
-  const [history, setHistory] = useState<PalletCountRecord[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [draft, setDraft] = useSharedState<PalletCountDraft>(draftStorageKey, () => createDraft());
+  const [history, setHistory] = useSharedState<PalletCountRecord[]>(historyStorageKey, []);
+  const [employees] = useSharedState<Employee[]>(workforceStorageKeysByArea.raw.employees, []);
   const [undoStack, setUndoStack] = useState<PalletCounts[]>([]);
   const [saveMessage, setSaveMessage] = useState("");
   const [saveError, setSaveError] = useState(false);
   const [printActive, setPrintActive] = useState(false);
   const [printRecord, setPrintRecord] = useState<PalletCountRecord | null>(null);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDraft(safeReadDraft() || createDraft());
-      setHistory(safeReadArray<PalletCountRecord>(historyStorageKey));
-      setEmployees(safeReadArray<Employee>(workforceStorageKeysByArea.raw.employees));
-      setReady(true);
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    if (!ready) return;
-    window.localStorage.setItem(draftStorageKey, JSON.stringify(draft));
-  }, [draft, ready]);
 
   useEffect(() => {
     if (!saveMessage) return;
@@ -182,7 +152,8 @@ export function PalletCountModule() {
   const lastSavedRecord = history.find((record) => record.id === draft.id);
   const lastSaved = lastSavedRecord?.savedAt || "";
   const sessionCompleted = Boolean(
-    lastSavedRecord && draft.completedAt === lastSavedRecord.savedAt,
+    lastSavedRecord && draft.completedAt === lastSavedRecord.savedAt &&
+    (!serverMode || getSyncState().phase === "saved"),
   );
   const systemPallets = inventoryDataAvailable
     ? localWarehouseSnapshot.A
@@ -237,7 +208,7 @@ export function PalletCountModule() {
     setSaveMessage("Rozpoczęto nowe liczenie");
   }
 
-  function saveAndPrint() {
+  async function saveAndPrint() {
     if (!allCategoriesEntered) {
       setSaveError(true);
       setSaveMessage(
@@ -262,7 +233,8 @@ export function PalletCountModule() {
     ].slice(0, 24);
     setDraft(completedDraft);
     setHistory(nextHistory);
-    window.localStorage.setItem(historyStorageKey, JSON.stringify(nextHistory));
+    try { await flushSharedWrites(); }
+    catch { setSaveError(true); setSaveMessage("Nie potwierdzono zapisu. Sprawdź komunikat nad modułem; PDF nie został otwarty."); return; }
     setPrintRecord(record);
     setPrintActive(true);
     setSaveError(false);
@@ -298,7 +270,6 @@ export function PalletCountModule() {
   function deleteRecord(id: string) {
     const nextHistory = history.filter((entry) => entry.id !== id);
     setHistory(nextHistory);
-    window.localStorage.setItem(historyStorageKey, JSON.stringify(nextHistory));
   }
 
   return (

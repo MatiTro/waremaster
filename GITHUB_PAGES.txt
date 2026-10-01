@@ -1,4 +1,7 @@
-WAREHOUSE MASTERPRESS — PUBLIKACJA NA GITHUB PAGES
+WAREHOUSE MASTERPRESS — GITHUB PAGES — PROJEKT 02 (01.10.2026)
+
+Nowy wygląd Startu, Tablicy i menu. VIKI jest wyłączona w tej wersji.
+Nie trzeba tworzyć nowego repozytorium ani usuwać istniejących danych.
 
 1. Rozpakuj paczkę na komputerze.
 2. Otwórz wewnętrzny folder Warehouse-Masterpress.
@@ -32,5 +35,10 @@ Magazynier:  login magazynier, hasło magazynier
 Są to konta demonstracyjne statycznej strony GitHub Pages. Docelowe logowanie
 i zabezpieczenie danych musi działać po stronie serwera.
 
-VIKI jest dostępna jako mały przycisk mikrofonu. Po kliknięciu wymaga zgody
-przeglądarki na mikrofon i czuwa na hasło „VIKI”.
+Kontrola wersji: po zalogowaniu, na dole strony, powinien być napis
+„GitHub · projekt 02 · 01.10.2026”. Jeśli go nie ma, sprawdź, czy nowy docs/index.html
+trafił do repozytorium i czy publikacja zakończyła się poprawnie. Odśwież Ctrl+F5.
+
+Dane testowe są zapisywane lokalnie w przeglądarce. Nie są współdzielone
+pomiędzy urządzeniami. Zachowano dotychczasowe klucze zapisu: aktualizacja
+pod tym samym adresem nie wymaga ponownego wpisywania danych.

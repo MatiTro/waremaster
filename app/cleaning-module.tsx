@@ -1,4 +1,6 @@
 "use client";
+import { useSharedState } from "./shared-data";
+import { flushSharedWrites } from "./shared-storage";
 
 import {
   CalendarRange,
@@ -14,11 +16,9 @@ import {
   formatDate,
   formatMonth,
   formatWeekday,
-  safeReadArray,
   weekDates,
   weekNumber,
   weeksInIsoYear,
-  workforceStorageKeys,
   workforceStorageKeysByArea,
   yearFromWeekKey,
   type CleaningFrequency,
@@ -90,7 +90,6 @@ export function CleaningModule({
   warehouse: CleaningWarehouse;
 }) {
   const storageKeys = workforceStorageKeysByArea[warehouse];
-  const [ready, setReady] = useState(false);
   const [frequency, setFrequency] = useState<CleaningFrequency>("weekly");
   const [selectedWeek, setSelectedWeek] = useState(currentWeekKey());
   const [selectedMonth, setSelectedMonth] = useState(currentMonthKey());
@@ -98,36 +97,11 @@ export function CleaningModule({
   const [planStartWeek, setPlanStartWeek] = useState(
     weekNumber(currentWeekKey()),
   );
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [responsibilities, setResponsibilities] = useState<
+  const [employees] = useSharedState<Employee[]>(storageKeys.employees, []);
+  const [responsibilities, setResponsibilities] = useSharedState<
     CleaningResponsibility[]
-  >([]);
+  >(storageKeys.cleaningResponsibilities, []);
   const [printMode, setPrintMode] = useState<"card" | "plan" | null>(null);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setEmployees(safeReadArray<Employee>(storageKeys.employees));
-      const stored = safeReadArray<CleaningResponsibility>(
-        storageKeys.cleaningResponsibilities,
-      );
-      const migrated = warehouse === "finished" && stored.length === 0
-        ? safeReadArray<CleaningResponsibility>(
-          workforceStorageKeys.cleaningResponsibilities,
-        ).filter((item) => item.warehouse === "finished")
-        : stored;
-      setResponsibilities(migrated);
-      setReady(true);
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [storageKeys, warehouse]);
-
-  useEffect(() => {
-    if (!ready) return;
-    window.localStorage.setItem(
-      storageKeys.cleaningResponsibilities,
-      JSON.stringify(responsibilities),
-    );
-  }, [ready, responsibilities, storageKeys]);
 
   useEffect(() => {
     const finish = () => setPrintMode(null);
@@ -216,7 +190,9 @@ export function CleaningModule({
     });
   }
 
-  function printDocument(mode: "card" | "plan") {
+  async function printDocument(mode: "card" | "plan") {
+    try { await flushSharedWrites(); }
+    catch { window.alert("Nie potwierdzono zapisu. Sprawdź komunikat nad modułem przed wydrukiem."); return; }
     setPrintMode(mode);
     window.setTimeout(() => window.print(), 80);
   }

@@ -1,9 +1,8 @@
 "use client";
+import { useSharedState } from "./shared-data";
 
 import {
   AlertTriangle,
-  ArrowLeft,
-  ArrowRight,
   CalendarDays,
   CheckCircle2,
   ClipboardList,
@@ -16,9 +15,8 @@ import {
   Wrench,
   X,
 } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import {
-  safeReadArray,
   workforceStorageKeysByArea,
   type Employee,
   type WorkforceArea,
@@ -28,7 +26,7 @@ type BoardKind = "task" | "notice" | "issue";
 type BoardPriority = "normal" | "important" | "urgent";
 type BoardStatus = "todo" | "progress" | "done";
 
-type ShiftBoardItem = {
+export type ShiftBoardItem = {
   id: string;
   kind: BoardKind;
   priority: BoardPriority;
@@ -45,7 +43,7 @@ const areaLabels: Record<WorkforceArea, string> = {
   finished: "Magazyn wyrobów gotowych",
 };
 
-const boardStorageKeys: Record<WorkforceArea, string> = {
+export const boardStorageKeys: Record<WorkforceArea, string> = {
   raw: "warehouse-masterpress:shift-board:raw:v1",
   finished: "warehouse-masterpress:shift-board:finished:v1",
 };
@@ -74,10 +72,6 @@ const priorityWeight: Record<BoardPriority, number> = {
   important: 2,
   urgent: 3,
 };
-
-function boardEvent(area: WorkforceArea) {
-  return `warehouse-shift-board-updated:${area}`;
-}
 
 function formatBoardDate(value: string) {
   if (!value) return "Bez terminu";
@@ -119,17 +113,7 @@ export function ShiftBoardSummary({
   area: WorkforceArea;
   onOpen: () => void;
 }) {
-  const [items, setItems] = useState<ShiftBoardItem[]>([]);
-
-  useEffect(() => {
-    const load = () => {
-      setItems(safeReadArray<ShiftBoardItem>(boardStorageKeys[area]));
-    };
-    load();
-    const eventName = boardEvent(area);
-    window.addEventListener(eventName, load);
-    return () => window.removeEventListener(eventName, load);
-  }, [area]);
+  const [items] = useSharedState<ShiftBoardItem[]>(boardStorageKeys[area], []);
 
   const active = sortBoardItems(
     items.filter((item) => item.status !== "done"),
@@ -140,10 +124,10 @@ export function ShiftBoardSummary({
       <div className="panel-heading">
         <div>
           <span>TABLICA ZMIANOWA</span>
-          <h3>Najważniejsze na teraz</h3>
+          <h3>Ważne dla Twojej zmiany</h3>
         </div>
         <button onClick={onOpen} type="button">
-          Otwórz tablicę <ArrowRight />
+          Otwórz tablicę
         </button>
       </div>
       {active.length > 0 ? (
@@ -151,25 +135,26 @@ export function ShiftBoardSummary({
           {active.map((item) => {
             const Icon = kindIcon(item.kind);
             return (
-              <article className={`priority-${item.priority}`} key={item.id}>
+              <button className={`priority-${item.priority}`} key={item.id} type="button" onClick={onOpen}>
                 <span><Icon /></span>
-                <div>
+                <span className="summary-item-copy">
                   <small>{kindLabels[item.kind]} · {priorityLabels[item.priority]}</small>
                   <strong>{item.title}</strong>
-                  <p>
+                  <span className="summary-item-detail">
                     {item.responsible || "Bez przypisanej osoby"} · {formatBoardDate(item.dueDate)}
-                  </p>
-                </div>
-              </article>
+                  </span>
+                </span>
+              </button>
             );
           })}
         </div>
       ) : (
         <div className="shift-summary-empty">
-          <CheckCircle2 />
+          <ClipboardList />
           <div>
-            <strong>Brak aktywnych wpisów</strong>
-            <span>Dodaj zadanie, komunikat albo zgłoszenie dla kolejnej zmiany.</span>
+            <strong>Miejsce na sprawy Twojej zmiany</strong>
+            <span>Nie ma aktywnych wpisów. Przekaż zespołowi zadanie, informację lub zgłoszenie.</span>
+            <button className="primary-button" onClick={onOpen} type="button">Przejdź do tablicy</button>
           </div>
         </div>
       )}
@@ -180,28 +165,12 @@ export function ShiftBoardSummary({
 export function ShiftBoardModule({ area }: { area: WorkforceArea }) {
   const storageKey = boardStorageKeys[area];
   const employeeKey = workforceStorageKeysByArea[area].employees;
-  const [ready, setReady] = useState(false);
-  const [items, setItems] = useState<ShiftBoardItem[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [items, setItems] = useSharedState<ShiftBoardItem[]>(storageKey, []);
+  const [employees] = useSharedState<Employee[]>(employeeKey, []);
   const [filter, setFilter] = useState<"all" | BoardKind>("all");
   const [query, setQuery] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [draftKind, setDraftKind] = useState<BoardKind>("task");
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setItems(safeReadArray<ShiftBoardItem>(storageKey));
-      setEmployees(safeReadArray<Employee>(employeeKey));
-      setReady(true);
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [employeeKey, storageKey]);
-
-  useEffect(() => {
-    if (!ready) return;
-    window.localStorage.setItem(storageKey, JSON.stringify(items));
-    window.dispatchEvent(new Event(boardEvent(area)));
-  }, [area, items, ready, storageKey]);
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("pl");
@@ -263,11 +232,10 @@ export function ShiftBoardModule({ area }: { area: WorkforceArea }) {
     <div className="view-stack shift-board-module">
       <section className="view-intro shift-board-intro">
         <div>
-          <span>PRZEKAZANIE ZMIANY · {areaLabels[area]}</span>
+          <span>PRZEKAZANIE ZMIANY</span>
           <h2>Tablica zmianowa</h2>
           <p>
-            Zadania, ważne informacje i zgłoszenia są zapisane wyłącznie dla
-            aktualnie wybranego magazynu.
+            Ważne sprawy dla zespołu · {areaLabels[area]}
           </p>
         </div>
         <div className="shift-board-actions">
@@ -295,14 +263,14 @@ export function ShiftBoardModule({ area }: { area: WorkforceArea }) {
             ["notice", "Komunikaty"],
             ["issue", "Problemy"],
           ] as const).map(([id, label]) => (
-            <button className={filter === id ? "active" : ""} key={id} onClick={() => setFilter(id)} type="button">
+            <button aria-pressed={filter === id} className={filter === id ? "active" : ""} key={id} onClick={() => setFilter(id)} type="button">
               {label}
             </button>
           ))}
         </div>
         <label className="shift-board-search">
           <Search />
-          <input onChange={(event) => setQuery(event.target.value)} placeholder="Szukaj wpisu lub osoby…" value={query} />
+          <input aria-label="Szukaj wpisu lub osoby" onChange={(event) => setQuery(event.target.value)} placeholder="Szukaj wpisu lub osoby…" value={query} />
         </label>
       </section>
 
@@ -333,19 +301,19 @@ export function ShiftBoardModule({ area }: { area: WorkforceArea }) {
                       <footer>
                         <div>
                           {status !== "todo" && (
-                            <button aria-label="Cofnij status" onClick={() => moveItem(item.id, -1)} type="button"><ArrowLeft /></button>
+                            <button aria-label={`Cofnij status: ${item.title}`} onClick={() => moveItem(item.id, -1)} type="button">Cofnij</button>
                           )}
                           {status !== "done" && (
-                            <button aria-label="Przejdź dalej" onClick={() => moveItem(item.id, 1)} type="button"><ArrowRight /></button>
+                            <button className="advance-status" aria-label={`${status === "todo" ? "Rozpocznij" : "Zakończ"}: ${item.title}`} onClick={() => moveItem(item.id, 1)} type="button">{status === "todo" ? "Rozpocznij" : "Zakończ"}</button>
                           )}
                         </div>
-                        <button aria-label="Usuń wpis" className="delete" onClick={() => setItems((current) => current.filter((entry) => entry.id !== item.id))} type="button"><Trash2 /></button>
+                        <button aria-label={`Usuń wpis: ${item.title}`} className="delete" onClick={() => { if (window.confirm(`Usunąć wpis „${item.title}”?`)) setItems((current) => current.filter((entry) => entry.id !== item.id)); }} type="button"><Trash2 /></button>
                       </footer>
                     </article>
                   );
                 })}
                 {statusItems.length === 0 && (
-                  <div className="shift-column-empty"><CheckCircle2 /><span>Brak wpisów</span></div>
+                  <div className="shift-column-empty">{status === "todo" ? <ClipboardList /> : status === "progress" ? <Clock3 /> : <CheckCircle2 />}<strong>{query || filter !== "all" ? "Brak pasujących wpisów" : status === "todo" ? "Wszystko uporządkowane" : status === "progress" ? "Tu trafią rozpoczęte sprawy" : "Tu zobaczysz efekty pracy"}</strong><span>{query || filter !== "all" ? "Zmień filtr lub wyszukiwane słowo." : status === "todo" ? "Dodaj wpis, gdy pojawi się nowe zadanie." : status === "progress" ? "Przy zadaniu wybierz „Rozpocznij”." : "Zakończone zadania pozostają na tablicy."}</span></div>
                 )}
               </div>
             </article>

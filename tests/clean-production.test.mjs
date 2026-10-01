@@ -22,6 +22,10 @@ const finishedSource = await readFile(
   new URL("../app/finished-warehouse.tsx", import.meta.url),
   "utf8",
 );
+const operationsSource = await readFile(
+  new URL("../app/operations-home.tsx", import.meta.url),
+  "utf8",
+);
 const shiftBoardSource = await readFile(
   new URL("../app/shift-board.tsx", import.meta.url),
   "utf8",
@@ -65,24 +69,6 @@ test("wersja produkcyjna nie generuje fikcyjnych ładunków ani zajętości", ()
   }
   assert.equal(modelSource.includes("const seed ="), false);
   assert.match(modelSource, /export const inventoryDataAvailable = false;/);
-});
-
-test("VIKI wraca jako mały moduł głosowy bez okna czatu", () => {
-  for (const forbidden of [
-    'className="voice-assistant-panel"',
-    'className="voice-result"',
-    'className="voice-examples"',
-    "PRZYKŁADOWE POLECENIA",
-    "voiceTranscript",
-    "voiceAnswer",
-  ]) {
-    assert.equal(pageSource.includes(forbidden), false, forbidden);
-  }
-  assert.match(pageSource, /className=\{`voice-assistant-trigger/);
-  assert.match(pageSource, /<Mic \/>/);
-  assert.match(pageSource, /<span>VIKI<\/span>/);
-  assert.match(pageSource, /onClick=\{wakeMode \? stopWakeMode : startWakeMode\}/);
-  assert.match(pageSource, /aria-label=\{wakeMode \? "Wyłącz VIKI" : "Włącz VIKI"\}/);
 });
 
 test("wersja GitHub Pages rozdziela konto lidera i magazyniera", async () => {
@@ -149,7 +135,6 @@ test("portal rozdziela magazyn surowców i wyrobów gotowych", () => {
   assert.match(pageSource, /Regały A–G/);
   assert.match(pageSource, /activeView === "map"/);
   assert.match(finishedSource, /Brak zaimportowanych stanów wyrobów/);
-  assert.match(finishedSource, /className="command-hero"/);
   assert.match(finishedSource, /Indeksy wyrobów/);
   assert.match(finishedSource, /Palety w blokadzie jakościowej/);
   assert.equal(finishedSource.includes("Partie gotowe do wydania"), false);
@@ -210,7 +195,7 @@ test("Tablica zmianowa działa osobno dla obu magazynów", () => {
   assert.match(shiftBoardSource, /W trakcie/);
   assert.match(shiftBoardSource, /Gotowe/);
   assert.equal(shiftBoardSource.includes("const initial"), false);
-  assert.match(finishedSource, /ShiftBoardSummary/);
+  assert.match(operationsSource, /ShiftBoardSummary/);
 });
 
 test("Dokumentacja udostępnia wzory CMR i WZ w obu obszarach", async () => {

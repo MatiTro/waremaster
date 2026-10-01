@@ -1,0 +1,11 @@
+PROJEKT 02 — 01.10.2026
+
+Nowy Start, nowa Tablica zmianowa, jasne menu, większe teksty.
+Wersja wyłącznie do testów na GitHub Pages. VIKI wyłączona.
+
+Wgraj do obecnego repozytorium, razem z całym folderem docs.
+Ustawienie Pages: main / docs. Konta: lider/lider i magazynier/magazynier.
+Znacznik nowej wersji na dole: GitHub · projekt 02 · 01.10.2026.
+
+Aby porównać wygląd, zacznij od konta lidera → Start,
+a następnie konto magazyniera → Tablica zmianowa.

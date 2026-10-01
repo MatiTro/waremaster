@@ -1,0 +1,53 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import test from 'node:test';
+import ts from 'typescript';
+
+test('zapis serwerowy: brak localStorage, retry bez duplikatu, konflikt i ochrona kopii roboczej', async t => {
+  const original = {window:globalThis.window,fetch:globalThis.fetch,EventSource:globalThis.EventSource};
+  t.after(()=>{Object.assign(globalThis,original);});
+  globalThis.window={localStorage:{getItem(){throw new Error('Niedozwolony localStorage');},setItem(){throw new Error('Niedozwolony localStorage');}},addEventListener(){},dispatchEvent(){}};
+  globalThis.EventSource=class {addEventListener(){} close(){}};
+  const key='warehouse-masterpress:employees:production:v1';
+  let row={key,version:0,data:[]}; let fail=false; let unknownOutcome=false; let lastRequest; let commits=0;
+  const completed=new Map();
+  globalThis.fetch=async(url,options={})=>{
+    if (fail) throw new Error('Test: brak sieci');
+    if (url==='/api/session') return Response.json({user:{username:'leader',displayName:'Test',role:'leader'},csrfToken:'a'.repeat(64)});
+    if (url==='/api/logout') return Response.json({ok:true});
+    if (url==='/api/state' && options.method==='GET') return Response.json({documents:[row]});
+    const body=JSON.parse(options.body); lastRequest=body;
+    if (completed.has(body.requestId)) return Response.json(completed.get(body.requestId));
+    if (body.changes[0].version!==row.version) return Response.json({error:'Test: konflikt'},{status:409});
+    row={...body.changes[0],version:row.version+1}; commits++;
+    const result={documents:[row]}; completed.set(body.requestId,result);
+    if (unknownOutcome) {unknownOutcome=false; throw new Error('Test: utracona odpowiedź po COMMIT');}
+    return Response.json(result);
+  };
+  const source=(await readFile(new URL('../app/shared-storage.ts',import.meta.url),'utf8')).replace('import.meta.env?.VITE_SERVER_MODE === "true"','true');
+  const output=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+  const store=await import('data:text/javascript;base64,'+Buffer.from(output).toString('base64'));
+  await store.openServerSession();
+  store.writeStoredValue(key,[{id:'e',name:'Pierwszy',active:true}]);
+  unknownOutcome=true;
+  await assert.rejects(store.flushSharedWrites());
+  const retryId=lastRequest.requestId;
+  assert.equal(store.hasPendingWrites(),true);
+  await store.flushSharedWrites();
+  assert.equal(lastRequest.requestId,retryId);
+  assert.equal(commits,1);
+  assert.equal(store.hasPendingWrites(),false);
+  store.writeStoredValue(key,[{id:'e',name:'Lokalna edycja',active:true}]);
+  row={key,version:2,data:[{id:'e',name:'Inne urządzenie',active:true}]};
+  await store.refreshSharedData();
+  await assert.rejects(store.flushSharedWrites());
+  assert.equal(store.getSyncState().conflict,true);
+  assert.equal(store.readStoredValue(key,[])[0].name,'Lokalna edycja');
+  fail=true;
+  await assert.rejects(store.discardPendingAndReload());
+  assert.equal(store.readStoredValue(key,[])[0].name,'Lokalna edycja');
+  fail=false;
+  await store.discardPendingAndReload();
+  assert.equal(store.readStoredValue(key,[])[0].name,'Inne urządzenie');
+  await store.closeServerSession();
+});

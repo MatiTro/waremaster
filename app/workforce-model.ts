@@ -1,3 +1,5 @@
+import { readStoredJson } from "./shared-storage.ts";
+
 export type ShiftId = "I" | "II" | "III";
 
 export type Employee = {
@@ -233,7 +235,7 @@ export function employeeInitials(name: string) {
 
 export function safeReadArray<T>(key: string): T[] {
   try {
-    const value = JSON.parse(window.localStorage.getItem(key) || "[]");
+    const value = JSON.parse(readStoredJson(key) || "[]");
     return Array.isArray(value) ? (value as T[]) : [];
   } catch {
     return [];

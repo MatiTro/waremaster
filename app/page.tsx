@@ -46,15 +46,17 @@ import {
   useState,
 } from "react";
 import { CleaningModule } from "./cleaning-module";
+import { useSharedState, ServerSyncStatus } from "./shared-data";
+import { serverMode, openServerSession, closeServerSession, hasPendingWrites, flushSharedWrites, readStoredValue } from "./shared-storage";
 import { DocumentationModule } from "./documentation-module";
 import { PalletCountModule } from "./pallet-count-module";
+import { OperationsHome } from "./operations-home";
 import {
-  FinishedDashboard,
   FinishedInventory,
   ShipmentsModule,
 } from "./finished-warehouse";
-import { ScheduleModule, WorkforceSummary } from "./schedule-module";
-import { ShiftBoardModule, ShiftBoardSummary } from "./shift-board";
+import { ScheduleModule } from "./schedule-module";
+import { ShiftBoardModule } from "./shift-board";
 import { answerScheduleVoiceCommand } from "./schedule-voice";
 import {
   detectVikiWake,
@@ -72,7 +74,7 @@ import {
 } from "./viki-dictionary";
 import {
   safeReadArray,
-  workforceStorageKeys,
+  workforceStorageKeysByArea,
   type Employee,
   type PlannedLeave,
   type ShiftAssignment,
@@ -209,9 +211,12 @@ type PlacementRule = {
   materials: RackMaterial[];
 };
 
+// VIKI zachowana w źródłach do osobnego projektu; nie uruchamia się w aplikacji.
+const vikiEnabled = false;
+
 const logisticsEmail = "logistyka@masterpress.com";
 const authSessionKey = "warehouse-masterpress:test-session:v1";
-const testAccounts: TestAccount[] = [
+const testAccounts: TestAccount[] = serverMode ? [] : [
   {
     username: "lider",
     password: "lider",
@@ -556,15 +561,28 @@ function isAuthSession(value: unknown): value is AuthSession {
 
 function LoginScreen({
   onLogin,
+  initialError = "",
 }: {
   onLogin: (session: AuthSession) => void;
+  initialError?: string;
 }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(initialError);
+  const [busy, setBusy] = useState(false);
 
-  function signIn(event: FormEvent<HTMLFormElement>) {
+  async function signIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (busy) return;
+    if (serverMode) {
+      setBusy(true); setError("");
+      try {
+        const session = await openServerSession(username.trim().toLocaleLowerCase("pl"), password);
+        if (session) { setPassword(""); onLogin(session); }
+      } catch (error) { setError(error instanceof Error ? error.message : "Nie można zalogować się do serwera."); }
+      finally { setBusy(false); }
+      return;
+    }
     const normalizedUsername = username.trim().toLocaleLowerCase("pl");
     const account = testAccounts.find(
       (candidate) =>
@@ -668,12 +686,12 @@ function LoginScreen({
               </div>
             </label>
             {error && <p aria-live="polite" className="login-error">{error}</p>}
-            <button className="login-submit" type="submit">
-              Zaloguj się <ChevronRight />
+            <button className="login-submit" type="submit" disabled={busy}>
+              {busy ? "Logowanie…" : "Zaloguj się"} <ChevronRight />
             </button>
           </form>
 
-          <div className="login-test-accounts">
+          {!serverMode && <div className="login-test-accounts">
             <span>KONTA DO TESTÓW</span>
             {testAccounts.map((account) => (
               <button
@@ -691,11 +709,12 @@ function LoginScreen({
                 <ChevronRight />
               </button>
             ))}
-          </div>
+          </div>}
 
           <p className="login-security-note">
-            Wersja demonstracyjna GitHub Pages. Docelowe konta i uprawnienia
-            zostaną zapisane oraz zweryfikowane na serwerze.
+            {serverMode
+              ? "Użyj konta otrzymanego od administratora."
+              : "Wersja demonstracyjna GitHub Pages. Docelowe konta i uprawnienia zostaną zapisane oraz zweryfikowane na serwerze."}
           </p>
         </div>
       </section>
@@ -749,9 +768,11 @@ function StatusBadge({
 export default function Home() {
   const [authSession, setAuthSession] = useState<AuthSession | null>(null);
   const [authReady, setAuthReady] = useState(false);
+  const [authError, setAuthError] = useState("");
   const [activeView, setActiveView] = useState<View>("dashboard");
   const [warehouseArea, setWarehouseArea] = useState<WarehouseArea>("raw");
   const [mobileNav, setMobileNav] = useState(false);
+  const [compactScreen, setCompactScreen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const warehouses = localWarehouseSnapshot;
   const [materials] = useState<Record<MaterialName, number>>({
@@ -761,8 +782,7 @@ export default function Home() {
     Tuleje: 0,
     Inne: 0,
   });
-  const [deliveries, setDeliveries] = useState<Delivery[]>(initialDeliveries);
-  const [storageReady, setStorageReady] = useState(false);
+  const [deliveries, setDeliveries] = useSharedState<Delivery[]>(storageKeys.deliveries, initialDeliveries);
   const [toast, setToast] = useState<string | null>(null);
   const [globalSearch, setGlobalSearch] = useState("");
   const [deliveryModal, setDeliveryModal] = useState(false);
@@ -798,8 +818,8 @@ export default function Home() {
   const [rackViewMode, setRackViewMode] = useState<"overview" | "readable">(
     "readable",
   );
-  const [supplierCatalog, setSupplierCatalog] = useState<SupplierEntry[]>(
-    initialSupplierCatalog,
+  const [supplierCatalog, setSupplierCatalog] = useSharedState<SupplierEntry[]>(
+    storageKeys.suppliers, initialSupplierCatalog,
   );
   const [supplierSearch, setSupplierSearch] = useState("");
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
@@ -939,18 +959,6 @@ export default function Home() {
           location.column,
         );
 
-  const donut = useMemo(() => {
-    if (!inventoryDataAvailable || totalPallets === 0) return "#e5ebf0";
-    let cursor = 0;
-    return `conic-gradient(${Object.entries(materials)
-      .map(([material, value]) => {
-        const start = cursor;
-        cursor += (value / totalPallets) * 100;
-        return `${materialColors[material as MaterialName]} ${start}% ${cursor}%`;
-      })
-      .join(",")})`;
-  }, [materials, totalPallets]);
-
   const filteredDeliveries = monthlyDeliveries.filter((delivery) =>
     [
       delivery.id,
@@ -1003,6 +1011,16 @@ export default function Home() {
   }).format(new Date(`${deliveryMonth}-01T12:00:00`));
 
   useEffect(() => {
+    if (serverMode) {
+      let alive = true;
+      void openServerSession().then(session => {
+        if (!alive) return;
+        setAuthSession(session);
+        if (session) setActiveView(session.role === "warehouse_worker" ? "shiftboard" : "dashboard");
+      }).catch(error => { if (alive) setAuthError(error instanceof Error ? error.message : "Serwer jest niedostępny."); })
+        .finally(() => { if (alive) setAuthReady(true); });
+      return () => { alive = false; };
+    }
     const timer = window.setTimeout(() => {
       try {
         const stored = JSON.parse(
@@ -1023,46 +1041,18 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      try {
-        const storedDeliveries = migrateDeliveries(JSON.parse(
-          window.localStorage.getItem(storageKeys.deliveries) || "null",
-        ));
-        if (storedDeliveries) {
-          setDeliveries(storedDeliveries);
-        }
-        const storedSuppliers = migrateSuppliers(JSON.parse(
-          window.localStorage.getItem(storageKeys.suppliers) || "null",
-        ));
-        if (storedSuppliers) {
-          setSupplierCatalog(storedSuppliers);
-        }
-      } catch {
-        // Nieprawidłowy lokalny zapis nie może zablokować uruchomienia aplikacji.
-      }
-      setStorageReady(true);
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    if (!storageReady) return;
-    window.localStorage.setItem(storageKeys.deliveries, JSON.stringify(deliveries));
-  }, [deliveries, storageReady]);
-
-  useEffect(() => {
-    if (!storageReady) return;
-    window.localStorage.setItem(
-      storageKeys.suppliers,
-      JSON.stringify(supplierCatalog),
-    );
-  }, [storageReady, supplierCatalog]);
-
-  useEffect(() => {
     if (!toast) return;
     const timer = window.setTimeout(() => setToast(null), 3500);
     return () => window.clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    if (serverMode) return;
+    const savedDeliveries = migrateDeliveries(readStoredValue(storageKeys.deliveries, null));
+    const savedSuppliers = migrateSuppliers(readStoredValue(storageKeys.suppliers, null));
+    if (savedDeliveries) setDeliveries(savedDeliveries);
+    if (savedSuppliers) setSupplierCatalog(savedSuppliers);
+  }, [setDeliveries, setSupplierCatalog]);
 
   useEffect(() => {
     wakeModeRef.current = wakeMode;
@@ -1070,6 +1060,7 @@ export default function Home() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
+      if (!vikiEnabled) return;
       const saved = window.localStorage.getItem("viki-active-warehouse");
       if (saved === "main" || saved === "new") {
         activeWarehouseRef.current = saved;
@@ -1083,7 +1074,7 @@ export default function Home() {
   }, [vikiAwake]);
 
   useEffect(() => {
-    if (!("speechSynthesis" in window)) return;
+    if (!vikiEnabled || !("speechSynthesis" in window)) return;
     const loadVoices = () => {
       const polish = window.speechSynthesis
         .getVoices()
@@ -1110,13 +1101,14 @@ export default function Home() {
       if (wakeArmTimerRef.current) window.clearTimeout(wakeArmTimerRef.current);
       if (recognitionRestartTimerRef.current) window.clearTimeout(recognitionRestartTimerRef.current);
       if (commandSilenceTimerRef.current) window.clearTimeout(commandSilenceTimerRef.current);
-      window.speechSynthesis?.cancel();
+      if (vikiEnabled) window.speechSynthesis?.cancel();
     },
     [],
   );
 
   function handleLogin(session: AuthSession) {
-    window.sessionStorage.setItem(authSessionKey, JSON.stringify(session));
+    if (!serverMode) window.sessionStorage.setItem(authSessionKey, JSON.stringify(session));
+    setAuthError("");
     setAuthSession(session);
     setWarehouseArea("raw");
     setActiveView(
@@ -1126,8 +1118,29 @@ export default function Home() {
     setSidebarCollapsed(false);
   }
 
-  function logout() {
-    stopWakeMode();
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 1280px)");
+    const update = () => { setCompactScreen(query.matches); setMobileNav(false); };
+    update(); query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
+    if (!mobileNav) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") setMobileNav(false); };
+    window.addEventListener("keydown", escape);
+    return () => { document.body.style.overflow = previous; window.removeEventListener("keydown", escape); };
+  }, [mobileNav]);
+
+  async function logout() {
+    if (serverMode) {
+      if (hasPendingWrites()) { setToast("Najpierw zapisz zmiany albo pobierz ich kopię w komunikacie nad modułem."); return; }
+      try { await closeServerSession(); }
+      catch (error) { setToast(error instanceof Error ? error.message : "Nie można wylogować."); return; }
+    }
+    if (vikiEnabled) stopWakeMode();
     window.sessionStorage.removeItem(authSessionKey);
     setAuthSession(null);
     setWarehouseArea("raw");
@@ -2072,17 +2085,19 @@ export default function Home() {
       return;
     }
 
+    const voiceScheduleKeys = workforceStorageKeysByArea[warehouseArea];
     const scheduleAnswer = answerScheduleVoiceCommand(command, {
-      employees: safeReadArray<Employee>(workforceStorageKeys.employees),
+      employees: safeReadArray<Employee>(voiceScheduleKeys.employees),
       assignments: safeReadArray<ShiftAssignment>(
-        workforceStorageKeys.assignments,
+        voiceScheduleKeys.assignments,
       ),
-      leaves: safeReadArray<PlannedLeave>(workforceStorageKeys.leaves),
+      leaves: safeReadArray<PlannedLeave>(voiceScheduleKeys.leaves),
       weekendAssignments: safeReadArray<WeekendAssignment>(
-        workforceStorageKeys.weekendAssignments,
+        voiceScheduleKeys.weekendAssignments,
       ),
     });
     if (scheduleAnswer) {
+      if (authSession?.role !== "leader") { speakAnswer("Grafik jest dostępny dla lidera."); return; }
       navigate("schedule");
       if (scheduleAnswer.action === "print") {
         window.setTimeout(() => {
@@ -2500,6 +2515,7 @@ export default function Home() {
   }
 
   function startWakeMode() {
+    if (!vikiEnabled) return;
     if (!speechRecognitionConstructor()) {
       speakAnswer("Tryb VIKI wymaga aktualnej wersji Chrome albo Edge.");
       return;
@@ -2511,7 +2527,7 @@ export default function Home() {
     startWakeRecognition();
   }
 
-  function saveDelivery(event: FormEvent<HTMLFormElement>) {
+  async function saveDelivery(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const supplier = String(form.get("supplier")).trim();
@@ -2527,6 +2543,7 @@ export default function Home() {
       date: previous?.date || isoDate(),
     };
 
+    let message: string;
     if (editingDelivery) {
       setDeliveries((current) =>
         current.map((delivery) =>
@@ -2535,24 +2552,28 @@ export default function Home() {
             : delivery,
         ),
       );
-      setToast(`Zapisano zmiany w ${editingDelivery}.`);
+      message = `Zapisano zmiany w ${editingDelivery}.`;
     } else {
       const id = nextDeliveryId(deliveries);
       setDeliveries((current) => [
         { ...payload, id },
         ...current,
       ]);
-      setToast("Dostawa " + id + " zapisana: " + supplier + ", " +
-        payload.pallets + " palet.");
+      message = "Dostawa " + id + " zapisana: " + supplier + ", " + payload.pallets + " palet.";
     }
+    try { await flushSharedWrites(); }
+    catch { setToast("Nie potwierdzono zapisu dostawy. Sprawdź komunikat nad modułem."); return; }
+    setToast(message);
     setEditingDelivery(null);
     setDeliveryModal(false);
   }
 
-  function deleteDelivery(id: string) {
+  async function deleteDelivery(id: string) {
     const delivery = deliveries.find((item) => item.id === id);
     if (!delivery) return;
     setDeliveries((current) => current.filter((item) => item.id !== id));
+    try { await flushSharedWrites(); }
+    catch { setToast("Nie potwierdzono usunięcia. Sprawdź komunikat nad modułem."); return; }
     setDeliveryToDelete(null);
     setToast(`Usunięto ${id} z rejestru dostaw.`);
   }
@@ -2678,13 +2699,13 @@ export default function Home() {
     );
   }
 
-  if (!authSession) return <LoginScreen onLogin={handleLogin} />;
+  if (!authSession) return <LoginScreen onLogin={handleLogin} initialError={authError} />;
 
   return (
     <main
       className={`app-shell area-${warehouseArea} ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}
     >
-      <aside className={`sidebar ${mobileNav ? "mobile-open" : ""}`}>
+      <aside className={`sidebar ${mobileNav ? "mobile-open" : ""}`} inert={compactScreen ? !mobileNav : sidebarCollapsed}>
         <div className="brand-row">
           <button
             aria-label="Zamknij menu"
@@ -2703,23 +2724,30 @@ export default function Home() {
         </div>
 
         <nav className="main-nav" aria-label="Nawigacja główna">
-          {visibleNavItems.map(({ id, label, description, icon: Icon }) => (
-            <button
-              className={activeView === id ? "active" : ""}
-              key={id}
-              onClick={() => navigate(id)}
-              type="button"
-            >
-              <span className="nav-icon">
-                <Icon size={20} />
-              </span>
-              <span>
-                <strong>{label}</strong>
-                <small>{description}</small>
-              </span>
-              <ChevronRight size={16} />
-            </button>
-          ))}
+          {[
+            { label: "MAGAZYN", ids: ["dashboard", "shiftboard", "map", "deliveries", "shipments", "palletcount", "inventory"] },
+            { label: "ORGANIZACJA", ids: ["schedule", "cleaning"] },
+            { label: "NARZĘDZIA", ids: ["barcodes", "documentation"] },
+          ].map(group => {
+            const entries = group.ids.flatMap(id => visibleNavItems.filter(item => item.id === id));
+            if (!entries.length) return null;
+            return <div className="nav-group" key={group.label}>
+              <p>{group.label}</p>
+              {entries.map(({ id, label, description, icon: Icon }) => (
+                <button
+                  className={activeView === id ? "active" : ""}
+                  aria-current={activeView === id ? "page" : undefined}
+                  key={id}
+                  onClick={() => navigate(id)}
+                  title={description}
+                  type="button"
+                >
+                  <span className="nav-icon"><Icon size={20} /></span>
+                  <strong>{label}</strong>
+                </button>
+              ))}
+            </div>;
+          })}
         </nav>
 
         <div className="warehouse-area-switcher">
@@ -2772,10 +2800,11 @@ export default function Home() {
       <section className="workspace">
         <header className="topbar">
           <button
-            aria-label={sidebarCollapsed ? "Pokaż menu" : "Ukryj menu"}
+            aria-label={(compactScreen ? !mobileNav : sidebarCollapsed) ? "Pokaż menu" : "Ukryj menu"}
+            aria-expanded={compactScreen ? mobileNav : !sidebarCollapsed}
             className="menu-button"
             onClick={() => {
-              if (window.matchMedia("(max-width: 940px)").matches)
+              if (window.matchMedia("(max-width: 1280px)").matches)
                 setMobileNav(true);
               else setSidebarCollapsed((value) => !value);
             }}
@@ -2784,7 +2813,7 @@ export default function Home() {
             <Menu />
           </button>
           <div className="topbar-title">
-            <p>MASTERPRESS · SYSTEM MAGAZYNOWY</p>
+            <p>MASTERPRESS</p>
             <h1>{visibleNavItems.find((item) => item.id === activeView)?.label}</h1>
           </div>
           <span className="topbar-area-badge">
@@ -2805,234 +2834,22 @@ export default function Home() {
           </form>
         </header>
 
-        {warehouseArea === "raw" && activeView === "dashboard" && (
-          <div className="view-stack">
-            <section className="command-hero">
-              <div>
-                <span className="hero-label">
-                  <Sparkles size={14} /> Szybki dostęp do pracy magazynu
-                </span>
-                <h2>Magazyn surowców w jednym miejscu</h2>
-                <p>
-                  Sprawdź zajętość, znajdź lokalizację, zarejestruj dostawę
-                  albo przygotuj kod kreskowy.
-                </p>
-              </div>
-            </section>
+        <ServerSyncStatus />
 
-            <WorkforceSummary area="raw" />
-
-            <ShiftBoardSummary
-              area="raw"
-              onOpen={() => navigate("shiftboard")}
-            />
-
-            <section className="kpi-grid">
-              <article className="metric-card metric-primary">
-                <div>
-                  <span>Łącznie palet</span>
-                  <PackageOpen />
-                </div>
-                <strong>
-                  {inventoryDataAvailable
-                    ? totalPallets.toLocaleString("pl-PL")
-                    : "—"}
-                </strong>
-                <p>
-                  {inventoryDataAvailable ? (
-                    <>
-                      <b>
-                        {Math.round(
-                          (totalPallets / (capacities.A + capacities.B)) * 100,
-                        )}
-                        %
-                      </b>{" "}
-                      wykorzystania wszystkich lokalizacji
-                    </>
-                  ) : (
-                    "Oczekiwanie na dane magazynowe"
-                  )}
-                </p>
-              </article>
-              <article className="metric-card">
-                <div>
-                  <span>Magazyn główny</span>
-                  <Warehouse />
-                </div>
-                <strong>
-                  {inventoryDataAvailable ? warehouses.A : "—"}
-                  <small> / {capacities.A}</small>
-                </strong>
-                <div className="progress">
-                  <i
-                    style={{
-                      width: inventoryDataAvailable
-                        ? `${(warehouses.A / capacities.A) * 100}%`
-                        : "0%",
-                    }}
-                  />
-                </div>
-                <p>
-                  {inventoryDataAvailable
-                    ? `${capacities.A - warehouses.A} wolnych miejsc`
-                    : "Brak danych o zajętości"}
-                </p>
-              </article>
-              <article className="metric-card">
-                <div>
-                  <span>Nowy magazyn</span>
-                  <Warehouse />
-                </div>
-                <strong>
-                  {inventoryDataAvailable ? warehouses.B : "—"}
-                  <small> / {capacities.B}</small>
-                </strong>
-                <div className="progress">
-                  <i
-                    style={{
-                      width: inventoryDataAvailable
-                        ? `${(warehouses.B / capacities.B) * 100}%`
-                        : "0%",
-                    }}
-                  />
-                </div>
-                <p>
-                  {inventoryDataAvailable
-                    ? `${capacities.B - warehouses.B} wolnych miejsc`
-                    : "Brak danych o zajętości"}
-                </p>
-              </article>
-              <article className="metric-card">
-                <div>
-                  <span>Dostawy dzisiaj</span>
-                  <Truck />
-                </div>
-                <strong>
-                  {todayDeliveries}
-                  <small> dostawy</small>
-                </strong>
-                <p>
-                  <b>{todayPallets}</b> palet zarejestrowanych
-                </p>
-              </article>
-            </section>
-
-            <section className="quick-grid">
-              <button onClick={() => navigate("inventory")} type="button">
-                <span className="quick-icon">
-                  <BarChart3 />
-                </span>
-                <span>
-                  <small>Zestawienie magazynowe</small>
-                  <strong>Sprawdź stan zapasów</strong>
-                  <em>Bieżący podgląd bez ręcznego wpisywania</em>
-                </span>
-                <ChevronRight />
-              </button>
-              <button
-                onClick={() => {
-                  navigate("deliveries");
-                  setEditingDelivery(null);
-                  setDeliveryModal(true);
-                }}
-                type="button"
-              >
-                <span className="quick-icon">
-                  <ClipboardList />
-                </span>
-                <span>
-                  <small>Rejestr dostaw</small>
-                  <strong>Dodaj nową dostawę</strong>
-                  <em>Formularz przygotowany pod telefon</em>
-                </span>
-                <ChevronRight />
-              </button>
-              <button onClick={() => navigate("barcodes")} type="button">
-                <span className="quick-icon">
-                  <QrCode />
-                </span>
-                <span>
-                  <small>Generator</small>
-                  <strong>Pokaż kody ładunku</strong>
-                  <em>Szukaj po ładunku, PO lub dostawcy</em>
-                </span>
-                <ChevronRight />
-              </button>
-            </section>
-
-            <section className="dashboard-grid">
-              <article className="panel stock-overview">
-                <div className="panel-heading">
-                  <div>
-                    <span>STRUKTURA ZAPASU</span>
-                    <h3>Palety według surowca</h3>
-                  </div>
-                  <button onClick={() => navigate("inventory")} type="button">
-                    Pełny widok <ChevronRight />
-                  </button>
-                </div>
-                {inventoryDataAvailable ? (
-                  <div className="material-overview">
-                    <div className="donut" style={{ background: donut }}>
-                      <div>
-                        <strong>{totalPallets}</strong>
-                        <span>palet</span>
-                      </div>
-                    </div>
-                    <div className="material-legend">
-                      {(
-                        Object.entries(materials) as [MaterialName, number][]
-                      ).map(([material, value]) => (
-                        <div key={material}>
-                          <i style={{ background: materialColors[material] }} />
-                          <span>{material}</span>
-                          <strong>{value}</strong>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="empty-report-state">
-                    <strong>Brak danych o zapasach</strong>
-                    <span>Struktura surowców pojawi się po podłączeniu bazy.</span>
-                  </div>
-                )}
-              </article>
-              <article className="panel activity-panel">
-                <div className="panel-heading">
-                  <div>
-                    <span>OSTATNIE DOSTAWY</span>
-                    <h3>Ostatnio zarejestrowane</h3>
-                  </div>
-                  <StatusBadge tone="info">Dane aplikacji</StatusBadge>
-                </div>
-                <div className="activity-list">
-                  {deliveries.slice(0, 4).map((delivery) => (
-                    <div key={delivery.id}>
-                      <span className="activity-icon in">
-                        <Truck />
-                      </span>
-                      <span>
-                        <strong>
-                          Zarejestrowano {delivery.pallets} palet
-                        </strong>
-                        <small>
-                          {delivery.supplier} · {warehouseNames[delivery.warehouse]}
-                        </small>
-                      </span>
-                      <time>{formatDeliveryDate(delivery.date)}</time>
-                    </div>
-                  ))}
-                  {deliveries.length === 0 && (
-                    <div className="empty-report-state">
-                      <strong>Brak zarejestrowanych dostaw</strong>
-                      <span>Dodaj pierwszą dostawę w niezależnym rejestrze.</span>
-                    </div>
-                  )}
-                </div>
-              </article>
-            </section>
-          </div>
+        {activeView === "dashboard" && (
+          <OperationsHome
+            key={warehouseArea}
+            area={warehouseArea}
+            onNavigate={navigate}
+            deliveries={deliveries}
+            occupied={warehouses}
+            materials={materials}
+            onAddDelivery={() => {
+              navigate("deliveries");
+              setEditingDelivery(null);
+              setDeliveryModal(true);
+            }}
+          />
         )}
 
         {warehouseArea === "raw" && activeView === "inventory" && (
@@ -4484,10 +4301,6 @@ export default function Home() {
           </div>
         )}
 
-        {warehouseArea === "finished" && activeView === "dashboard" && (
-          <FinishedDashboard onNavigate={navigate} />
-        )}
-
         {warehouseArea === "finished" && activeView === "inventory" && (
           <FinishedInventory />
         )}
@@ -4518,11 +4331,11 @@ export default function Home() {
 
         <footer>
           <span>Warehouse Masterpress · system magazynowy</span>
-          <span>Wersja operacyjna · gotowa do integracji danych</span>
+          <span>{serverMode ? "Wersja serwerowa" : "GitHub · projekt 02 · 01.10.2026"}</span>
         </footer>
       </section>
 
-      <button
+      {vikiEnabled && <button
         aria-label={wakeMode ? "Wyłącz VIKI" : "Włącz VIKI"}
         aria-pressed={wakeMode}
         className={`voice-assistant-trigger ${wakeMode ? "active" : ""} ${vikiAwake ? "awake" : ""} ${voiceSpeaking ? "speaking" : ""}`}
@@ -4533,7 +4346,7 @@ export default function Home() {
         <Mic />
         <span>VIKI</span>
         <i />
-      </button>
+      </button>}
 
       {deliveryModal && (
         <div

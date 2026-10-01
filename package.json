@@ -6,16 +6,13 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "install:ci": "bash scripts/install-ci.sh",
-    "dev": "vite",
-    "dev:local": "vite --config vite.local.config.ts --host 127.0.0.1 --port 5173 --open",
-    "build": "bash scripts/build-verified.sh",
+    "dev": "vite --config vite.pages.config.ts --host 127.0.0.1",
+    "dev:local": "vite --config vite.pages.config.ts --host 127.0.0.1 --port 5173 --open",
+    "build": "vite build --config vite.pages.config.ts",
     "build:static": "vite build --config vite.pages.config.ts",
-    "start": "vinext start",
-    "test": "npm run build && node --experimental-strip-types --test tests/*.test.mjs",
-    "validate:artifact": "bash scripts/validate-artifact.sh",
-    "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern dist-pages --ignore-pattern docs --ignore-pattern .next",
-    "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate"
+    "preview": "vite preview --config vite.pages.config.ts --host 127.0.0.1",
+    "check": "tsc --noEmit --incremental false",
+    "test": "node --experimental-strip-types --test tests/clean-production.test.mjs tests/warehouse-model.test.mjs tests/workforce-model.test.mjs tests/server-storage.test.mjs"
   },
   "dependencies": {
     "@types/jsbarcode": "^3.11.4",

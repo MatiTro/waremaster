@@ -1,4 +1,6 @@
 "use client";
+import { useSharedState } from "./shared-data";
+import { flushSharedWrites } from "./shared-storage";
 
 import {
   AlertTriangle,
@@ -65,15 +67,6 @@ const weekdayLabels = ["Pon", "Wt", "Śr", "Czw", "Pt", "Sob", "Nie"];
 function employeeName(employees: Employee[], id: string) {
   return employees.find((employee) => employee.id === id)?.name ||
     "Nieznany pracownik";
-}
-
-function writeWorkforceData<T>(
-  key: string,
-  value: T[],
-  area: WorkforceArea,
-) {
-  window.localStorage.setItem(key, JSON.stringify(value));
-  window.dispatchEvent(new Event(workforceUpdateEvent(area)));
 }
 
 function addMonths(month: string, delta: number) {
@@ -180,16 +173,15 @@ export function WorkforceSummary({ area = "raw" }: { area?: WorkforceArea }) {
 export function ScheduleModule({ area = "raw" }: { area?: WorkforceArea }) {
   const storageKeys = workforceStorageKeysByArea[area];
   const today = localIsoDate();
-  const [ready, setReady] = useState(false);
   const [tab, setTab] = useState<ScheduleTab>("planner");
   const [selectedMonth, setSelectedMonth] = useState(currentMonthKey());
   const [calendarMonth, setCalendarMonth] = useState(currentMonthKey());
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [assignments, setAssignments] = useState<ShiftAssignment[]>([]);
-  const [leaves, setLeaves] = useState<PlannedLeave[]>([]);
-  const [weekendAssignments, setWeekendAssignments] = useState<
+  const [employees, setEmployees] = useSharedState<Employee[]>(storageKeys.employees, []);
+  const [assignments, setAssignments] = useSharedState<ShiftAssignment[]>(storageKeys.assignments, []);
+  const [leaves, setLeaves] = useSharedState<PlannedLeave[]>(storageKeys.leaves, []);
+  const [weekendAssignments, setWeekendAssignments] = useSharedState<
     WeekendAssignment[]
-  >([]);
+  >(storageKeys.weekendAssignments, []);
   const [draftFrom, setDraftFrom] = useState(today);
   const [draftTo, setDraftTo] = useState(today);
   const [selectingRangeEnd, setSelectingRangeEnd] = useState(false);
@@ -206,52 +198,8 @@ export function ScheduleModule({ area = "raw" }: { area?: WorkforceArea }) {
   const [weekendTo, setWeekendTo] = useState("16:00");
   const [notice, setNotice] = useState<ModuleNotice | null>(null);
   const [printActive, setPrintActive] = useState(false);
-  const [scheduleHistory, setScheduleHistory] = useState<ScheduleHistoryRecord[]>([]);
+  const [scheduleHistory, setScheduleHistory] = useSharedState<ScheduleHistoryRecord[]>(scheduleHistoryKeys[area], []);
   const [historyPreview, setHistoryPreview] = useState<ScheduleHistoryRecord | null>(null);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setEmployees(safeReadArray<Employee>(storageKeys.employees));
-      setAssignments(
-        safeReadArray<ShiftAssignment>(storageKeys.assignments),
-      );
-      setLeaves(safeReadArray<PlannedLeave>(storageKeys.leaves));
-      setWeekendAssignments(
-        safeReadArray<WeekendAssignment>(
-          storageKeys.weekendAssignments,
-        ),
-      );
-      setScheduleHistory(
-        safeReadArray<ScheduleHistoryRecord>(scheduleHistoryKeys[area]),
-      );
-      setReady(true);
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [area, storageKeys]);
-
-  useEffect(() => {
-    if (ready) writeWorkforceData(storageKeys.employees, employees, area);
-  }, [area, employees, ready, storageKeys]);
-
-  useEffect(() => {
-    if (ready) {
-      writeWorkforceData(storageKeys.assignments, assignments, area);
-    }
-  }, [area, assignments, ready, storageKeys]);
-
-  useEffect(() => {
-    if (ready) writeWorkforceData(storageKeys.leaves, leaves, area);
-  }, [area, leaves, ready, storageKeys]);
-
-  useEffect(() => {
-    if (ready) {
-      writeWorkforceData(
-        storageKeys.weekendAssignments,
-        weekendAssignments,
-        area,
-      );
-    }
-  }, [area, ready, storageKeys, weekendAssignments]);
 
   useEffect(() => {
     if (!notice) return;
@@ -707,12 +655,14 @@ export function ScheduleModule({ area = "raw" }: { area?: WorkforceArea }) {
     setCustomEditorOpen(false);
   }
 
-  function printSchedule() {
+  async function printSchedule() {
+    try { await flushSharedWrites(); }
+    catch { setNotice({ message: "Najpierw rozwiąż błąd zapisu nad modułem.", tone: "danger" }); return; }
     setPrintActive(true);
     window.setTimeout(() => window.print(), 80);
   }
 
-  function saveScheduleVersion() {
+  async function saveScheduleVersion() {
     const record: ScheduleHistoryRecord = {
       id: makeRecordId("SCH"),
       month: selectedMonth,
@@ -726,7 +676,8 @@ export function ScheduleModule({ area = "raw" }: { area?: WorkforceArea }) {
     };
     const next = [record, ...scheduleHistory].slice(0, 48);
     setScheduleHistory(next);
-    window.localStorage.setItem(scheduleHistoryKeys[area], JSON.stringify(next));
+    try { await flushSharedWrites(); }
+    catch { setNotice({ message: "Wersja grafiku nie została potwierdzona na serwerze. Sprawdź komunikat nad modułem.", tone: "danger" }); return; }
     setNotice({
       message: `Zapisano wersję grafiku: ${formatMonth(selectedMonth)}.`,
       tone: "success",
@@ -736,7 +687,6 @@ export function ScheduleModule({ area = "raw" }: { area?: WorkforceArea }) {
   function deleteScheduleVersion(id: string) {
     const next = scheduleHistory.filter((record) => record.id !== id);
     setScheduleHistory(next);
-    window.localStorage.setItem(scheduleHistoryKeys[area], JSON.stringify(next));
   }
 
   function historyMark(
