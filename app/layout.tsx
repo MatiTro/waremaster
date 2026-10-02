@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./responsive.css";
 import "./operations-design.css";
+import "./home-refresh.css";
 
 export const metadata: Metadata = {
   title: "Warehouse Masterpress",

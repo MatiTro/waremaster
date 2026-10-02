@@ -1,11 +1,9 @@
-PROJEKT 02 — 01.10.2026
+PROJEKT 03 · 02.10.2026
 
-Nowy Start, nowa Tablica zmianowa, jasne menu, większe teksty.
-Wersja wyłącznie do testów na GitHub Pages. VIKI wyłączona.
-
-Wgraj do obecnego repozytorium, razem z całym folderem docs.
-Ustawienie Pages: main / docs. Konta: lider/lider i magazynier/magazynier.
-Znacznik nowej wersji na dole: GitHub · projekt 02 · 01.10.2026.
-
-Aby porównać wygląd, zacznij od konta lidera → Start,
-a następnie konto magazyniera → Tablica zmianowa.
+Cała lewa nawigacja w granacie Masterpress.
+Nowy Start: panel mapy, podsumowanie dnia, szybkie działania, tablica i dostawy.
+Nowe karty pojemności magazynów i bardziej zwarty układ przy braku danych.
+Responsywne układy i subtelne animacje z obsługą ograniczenia ruchu.
+Pozostałe moduły, konta testowe i klucze zapisu zachowane; VIKI wyłączona.
+Gotowy build jest w docs. Prześlij zawartość paczki do obecnego repozytorium.
+Nowy Start zobaczysz po zalogowaniu na konto lidera.

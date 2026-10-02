@@ -4331,7 +4331,7 @@ export default function Home() {
 
         <footer>
           <span>Warehouse Masterpress · system magazynowy</span>
-          <span>{serverMode ? "Wersja serwerowa" : "GitHub · projekt 02 · 01.10.2026"}</span>
+          <span>{serverMode ? "Wersja serwerowa" : "GitHub · projekt 03 · 02.10.2026"}</span>
         </footer>
       </section>
 

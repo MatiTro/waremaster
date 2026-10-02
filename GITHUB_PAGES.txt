@@ -1,6 +1,6 @@
-WAREHOUSE MASTERPRESS — GITHUB PAGES — PROJEKT 02 (01.10.2026)
+WAREHOUSE MASTERPRESS — GITHUB PAGES — PROJEKT 03 (02.10.2026)
 
-Nowy wygląd Startu, Tablicy i menu. VIKI jest wyłączona w tej wersji.
+Nowy Start i jednolicie granatowe menu. VIKI jest wyłączona w tej wersji.
 Nie trzeba tworzyć nowego repozytorium ani usuwać istniejących danych.
 
 1. Rozpakuj paczkę na komputerze.
@@ -29,14 +29,14 @@ Publikacja strony korzysta z prostszego ustawienia main / docs opisanego wyżej.
 
 KONTA TESTOWE
 
-Lider:       login lider, hasło lider
+Lider:       login lider, hasło lider — tutaj zobaczysz nowy Start
 Magazynier:  login magazynier, hasło magazynier
 
 Są to konta demonstracyjne statycznej strony GitHub Pages. Docelowe logowanie
 i zabezpieczenie danych musi działać po stronie serwera.
 
 Kontrola wersji: po zalogowaniu, na dole strony, powinien być napis
-„GitHub · projekt 02 · 01.10.2026”. Jeśli go nie ma, sprawdź, czy nowy docs/index.html
+„GitHub · projekt 03 · 02.10.2026”. Jeśli go nie ma, sprawdź, czy nowy docs/index.html
 trafił do repozytorium i czy publikacja zakończyła się poprawnie. Odśwież Ctrl+F5.
 
 Dane testowe są zapisywane lokalnie w przeglądarce. Nie są współdzielone
