@@ -192,3 +192,66 @@
 @media (prefers-reduced-motion: reduce) {
   .home-v3 *, .home-v3 *::before { animation: none !important; transition: none !important; }
 }
+
+/* Projekt 04: jedna sekcja zadań, mapa i pojemność razem, bez powielonych liczników. */
+@media screen {
+  .app-shell .main-nav button .nav-icon,
+  .app-shell .main-nav button.active .nav-icon,
+  .app-shell.area-finished .main-nav button.active .nav-icon {
+    background: transparent; background-image: none; border: 0; box-shadow: none; outline: 0; border-radius: 0;
+  }
+  .app-shell .main-nav button.active { box-shadow: none; }
+  .home-v4 .home-welcome { margin-bottom: 0; }
+  .home-v4 .home-welcome h2 { color: #163b5c; font-size: 30px; letter-spacing: -.035em; font-weight: 620; margin: 4px 0 0; line-height: 1.2; }
+  .home-overview-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: stretch; }
+  .home-v4 .home-hero { min-height: 320px; display: grid; grid-template-columns: minmax(0, 1fr); padding: 27px 28px 23px; }
+  .home-v4 .hero-copy { width: 70%; }
+  .home-v4 .hero-area { font-size: 10px; letter-spacing: .08em; }
+  .home-v4 .hero-copy h3 { color: #fff; font-size: 37px; line-height: 1.1; letter-spacing: -.035em; font-weight: 600; margin: 17px 0 13px; }
+  .home-v4 .hero-copy h3 em { color: #a3e6f5; font-style: normal; }
+  .home-v4 .hero-copy > p { font-size: 12px; margin-bottom: 18px; }
+  .home-v4 .home-blueprint { position: absolute; width: 34%; top: 44px; right: 18px; opacity: .6; }
+  .home-map-capacities { display: flex; align-items: flex-start; gap: 28px; margin-top: 26px; padding-top: 16px; border-top: 1px solid #ffffff26; position: relative; }
+  .home-map-capacities > div { display: grid; gap: 5px; }
+  .home-map-capacities > div > span { font-size: 10px; color: #bbd0e3; }
+  .home-map-capacities strong { font-size: 19px; font-weight: 600; color: #fff; line-height: 1.2; }
+  .home-map-capacities small { font-size: 9px; color: #bbd0e3; font-weight: 400; margin-left: 4px; }
+  .home-map-occupancy { font-size: 11px; color: #bbd0e3; margin: 12px 0 0; }
+  .home-v4 .operations-activity { display: flex; flex-direction: column; }
+  .home-v4 .operations-activity .operations-section-heading { margin-bottom: 12px; }
+  .home-delivery-today { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; color: #657c92; background: #f0f5f9; border-radius: 8px; padding: 10px 12px; margin: 0 0 13px; font-size: 12px; }
+  .home-delivery-today strong { color: #315473; font-size: 12px; font-weight: 600; }
+  .home-delivery-today > span { padding-inline: 4px; }
+  .home-v4 .home-empty-state { margin-block: auto; padding-block: 10px; }
+  .home-v4 .home-work-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; }
+  .home-v4 .operations-team .workforce-summary { grid-template-columns: minmax(0, 1fr); }
+  .home-v4 .operations-team .workforce-summary-heading { padding: 0 0 15px; }
+  .home-v4 .operations-team .workforce-summary-metrics { border: 0; }
+  .home-v4 .operations-team .workforce-summary-metrics > div { padding: 10px; }
+  .home-v4 .operations-team .workforce-summary-metrics strong { font-size: 25px; }
+  .home-v4 .operations-team .workforce-summary-metrics span { font-size: 11px; line-height: 1.5; }
+  .home-v4 .operations-team .workforce-summary-note { margin-top: 12px; }
+  .home-v4 .operations-team .workforce-summary-note p { font-size: 12px; }
+}
+@media screen and (max-width: 1050px) {
+  .home-v4 .hero-copy { width: 78%; }
+  .home-v4 .home-blueprint { width: 32%; right: 10px; opacity: .3; }
+  .home-v4 .hero-copy h3 { font-size: 33px; }
+  .home-map-capacities { gap: 20px; }
+  .home-map-capacities small { display: block; margin: 4px 0 0; }
+}
+@media screen and (max-width: 760px) {
+  .home-overview-grid, .home-v4 .home-work-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .home-v4 .home-blueprint { width: 34%; opacity: .55; right: 16px; }
+  .home-v4 .hero-copy { width: 70%; }
+  .home-map-capacities small { display: inline; margin: 0 0 0 4px; }
+}
+@media screen and (max-width: 480px) {
+  .home-v4 .home-welcome h2 { font-size: 27px; }
+  .home-v4 .home-hero { padding: 25px 22px 22px; min-height: 320px; }
+  .home-v4 .hero-copy { width: 100%; }
+  .home-v4 .home-blueprint { opacity: .15; width: 40%; right: 0; }
+  .home-v4 .hero-copy h3 { font-size: 35px; }
+  .home-map-capacities { gap: 26px; }
+  .home-map-capacities small { display: block; margin: 4px 0 0; }
+}

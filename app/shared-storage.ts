@@ -36,12 +36,14 @@ function status(phase: SyncState["phase"], message: string, conflict = false) { 
 export function hasPendingWrites() { return pending.size > 0 || !!recovery || !!activeSave; }
 export function readStoredValue<T>(key: string, fallback: T): T {
   if (serverMode) return (pending.get(key)?.data ?? confirmed.get(key)?.data ?? fallback) as T;
-  if (localCache.has(key)) return localCache.get(key) as T;
+  // Cache przechowuje wyłącznie odczytaną wartość, nigdy fallback innego widoku.
+  // Podgląd Startu używa null, a moduły formularzy oczekują np. [] lub szkicu.
+  if (localCache.has(key)) return (localCache.get(key) ?? fallback) as T;
   try {
     const raw = typeof window === "undefined" ? null : window.localStorage.getItem(key);
-    const value = raw === null ? fallback : JSON.parse(raw);
+    const value = raw === null ? null : JSON.parse(raw);
     localCache.set(key, value);
-    return value as T;
+    return (value ?? fallback) as T;
   } catch { return fallback; }
 }
 export function readStoredJson(key: string) { return JSON.stringify(readStoredValue(key, null)); }

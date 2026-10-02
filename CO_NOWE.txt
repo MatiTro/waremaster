@@ -1,9 +1,12 @@
-PROJEKT 03 · 02.10.2026
+PROJEKT 04 · 02.10.2026
 
-Cała lewa nawigacja w granacie Masterpress.
-Nowy Start: panel mapy, podsumowanie dnia, szybkie działania, tablica i dostawy.
-Nowe karty pojemności magazynów i bardziej zwarty układ przy braku danych.
-Responsywne układy i subtelne animacje z obsługą ograniczenia ruchu.
-Pozostałe moduły, konta testowe i klucze zapisu zachowane; VIKI wyłączona.
-Gotowy build jest w docs. Prześlij zawartość paczki do obecnego repozytorium.
-Nowy Start zobaczysz po zalogowaniu na konto lidera.
+1. Nowy ekran logowania: pełne tło, duża typografia, jasna karta i przycisk podglądu hasła.
+2. Naprawa wspólnego błędu listy palet, grafiku i karty mycia:
+   odczyt pustych danych na Starcie nie przekazuje już null do modułów.
+3. Aktywna ikona w menu ma przezroczyste tło, również w wyrobach gotowych.
+4. Uproszczony Start: mapa i pojemność razem, podsumowanie dostaw w rejestrze,
+   cztery skróty i jedna tablica zadań. Usunięte powtórzone liczniki zadań.
+5. Zachowane konta, uprawnienia i klucze zapisanych danych.
+
+Wgraj zawartość folderu Warehouse-Masterpress, w tym cały docs, do obecnego repozytorium.
+Pages: main / docs. Po publikacji odśwież Ctrl+F5. Nie trzeba czyścić danych przeglądarki.

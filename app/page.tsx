@@ -12,6 +12,9 @@ import {
   ClipboardList,
   Droplets,
   FileText,
+  Eye,
+  EyeOff,
+  ArrowUpRight,
   Mail,
   LayoutDashboard,
   LockKeyhole,
@@ -568,6 +571,7 @@ function LoginScreen({
 }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [error, setError] = useState(initialError);
   const [busy, setBusy] = useState(false);
 
@@ -608,116 +612,79 @@ function LoginScreen({
   }
 
   return (
-    <main className="login-screen login-daylight">
-      <section className="login-brand-panel">
-        <div
-          aria-hidden="true"
-          className="login-warehouse-backdrop"
-          style={{
-            backgroundImage: `url(${import.meta.env.BASE_URL}warehouse-login-daylight.webp)`,
-          }}
-        />
-        <div className="login-brand-glow" />
-        <div className="login-brand-lockup">
+    <main className="login-portal">
+      <div className="portal-scene" aria-hidden="true" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}warehouse-login-daylight.webp)` }} />
+      <div className="portal-grid" aria-hidden="true" />
+      <header className="portal-header">
+        <div className="portal-brand">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            alt="Masterpress"
-            src={`${import.meta.env.BASE_URL}masterpress-login-logo.png`}
-          />
+          <img alt="Masterpress" src={`${import.meta.env.BASE_URL}masterpress-logo-white.png`} />
+          <span>WAREHOUSE</span>
         </div>
-        <div className="login-brand-copy">
-          <h1>
-            Wszystko na<br />
-            <em>swoim miejscu.</em>
-          </h1>
-          <p>
-            Magazyn surowców i wyrobów gotowych w jednym systemie.
-          </p>
-        </div>
-        <div className="login-capability-strip">
-          <article>
-            <span><Truck /></span>
-            <div><small>PRZYJĘCIE</small><strong>Dostawy</strong></div>
-          </article>
-          <article>
-            <span><MapPin /></span>
-            <div><small>SKŁADOWANIE</small><strong>Lokalizacje</strong></div>
-          </article>
-          <article>
-            <span><PackageCheck /></span>
-            <div><small>EKSPEDYCJA</small><strong>Wysyłki</strong></div>
-          </article>
-        </div>
-      </section>
+        <span className="portal-header-note"><Warehouse size={17} /> Logistyka w jednym miejscu</span>
+      </header>
 
-      <section className="login-form-panel">
-        <div className="login-form-wrap">
+      <div className="portal-layout">
+        <section className="portal-intro" aria-labelledby="portal-title">
+          <span className="portal-eyebrow"><i /> SUROWCE · WYROBY GOTOWE</span>
+          <h1 id="portal-title">Dobra zmiana<br />zaczyna się<br /><em>tutaj.</em></h1>
+          <p>Każda paleta na swoim miejscu.<br />Każda zmiana z jasnym planem.</p>
+          <div className="portal-process" aria-label="Obszary systemu">
+            <div><span>01</span><Truck size={20} /><strong>Dostawy</strong></div>
+            <div><span>02</span><MapPin size={20} /><strong>Lokalizacje</strong></div>
+            <div><span>03</span><PackageCheck size={20} /><strong>Wysyłki</strong></div>
+          </div>
+        </section>
+
+        <section className="portal-login-card" aria-labelledby="portal-login-title">
           <header>
-            <span className="login-eyebrow"><LockKeyhole /> SYSTEM MAGAZYNOWY</span>
-            <h2>Witaj</h2>
-            <p>Zaloguj się do swojego obszaru operacyjnego.</p>
+            <span className="portal-card-eyebrow"><LockKeyhole size={15} /> TWÓJ OBSZAR PRACY</span>
+            <h2 id="portal-login-title">Zaloguj się.</h2>
+            <p>Dobrze Cię widzieć. Zaczynamy?</p>
           </header>
-
           <form className="login-form" onSubmit={signIn}>
             <label>
               Login
               <div className="login-input">
                 <UserRound />
-                <input
-                  autoComplete="username"
-                  autoFocus
+                <input aria-label="Login" name="username" autoComplete="username" required
                   onChange={(event) => setUsername(event.target.value)}
-                  placeholder="Wpisz login"
-                  value={username}
-                />
+                  placeholder="Wpisz login" value={username}
+                  aria-invalid={Boolean(error)} aria-describedby={error ? "login-error" : undefined} />
               </div>
             </label>
             <label>
               Hasło
               <div className="login-input">
                 <LockKeyhole />
-                <input
-                  autoComplete="current-password"
+                <input aria-label="Hasło" name="password" autoComplete="current-password" required
                   onChange={(event) => setPassword(event.target.value)}
-                  placeholder="Wpisz hasło"
-                  type="password"
-                  value={password}
-                />
+                  placeholder="Wpisz hasło" type={passwordVisible ? "text" : "password"} value={password}
+                  aria-invalid={Boolean(error)} aria-describedby={error ? "login-error" : undefined} />
+                <button className="password-toggle" type="button"
+                  aria-label={passwordVisible ? "Ukryj hasło" : "Pokaż hasło"}
+                  aria-pressed={passwordVisible} onClick={() => setPasswordVisible(value => !value)}>
+                  {passwordVisible ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
             </label>
-            {error && <p aria-live="polite" className="login-error">{error}</p>}
+            {error && <p id="login-error" role="alert" className="login-error">{error}</p>}
             <button className="login-submit" type="submit" disabled={busy}>
-              {busy ? "Logowanie…" : "Zaloguj się"} <ChevronRight />
+              {busy ? "Logowanie…" : "Przejdź do magazynu"} <ArrowUpRight size={20} />
             </button>
           </form>
 
-          {!serverMode && <div className="login-test-accounts">
-            <span>KONTA DO TESTÓW</span>
-            {testAccounts.map((account) => (
-              <button
-                key={account.username}
-                onClick={() => fillTestAccount(account)}
-                type="button"
-              >
-                <span className={`login-role-icon ${account.role}`}>
-                  {account.role === "leader" ? <Sparkles /> : <Warehouse />}
-                </span>
-                <span>
-                  <strong>{roleLabels[account.role]}</strong>
-                  <small>{account.username} / {account.password}</small>
-                </span>
-                <ChevronRight />
-              </button>
-            ))}
+          {!serverMode && <div className="portal-test-access">
+            <div className="portal-test-label"><span>KONTA TESTOWE</span><span>Wybierz, aby uzupełnić</span></div>
+            <div>{testAccounts.map(account => <button type="button" key={account.username} onClick={() => fillTestAccount(account)}>
+              {account.role === "leader" ? <UserRound size={20} /> : <Warehouse size={20} />}
+              <span><strong>{roleLabels[account.role]}</strong><small>{account.role === "leader" ? "Start i organizacja" : "Praca w magazynie"}</small></span>
+            </button>)}</div>
           </div>}
-
-          <p className="login-security-note">
-            {serverMode
-              ? "Użyj konta otrzymanego od administratora."
-              : "Wersja demonstracyjna GitHub Pages. Docelowe konta i uprawnienia zostaną zapisane oraz zweryfikowane na serwerze."}
-          </p>
-        </div>
-      </section>
+          <p className="portal-access-note">{serverMode ? "Użyj konta otrzymanego od administratora." : "Wersja demonstracyjna GitHub Pages"}</p>
+        </section>
+      </div>
+      <footer className="portal-footer"><span>Warehouse Masterpress</span><span>Porządek w przestrzeni. Spokój w pracy.</span><span>by Masterpress</span></footer>
     </main>
   );
 }
@@ -4331,7 +4298,7 @@ export default function Home() {
 
         <footer>
           <span>Warehouse Masterpress · system magazynowy</span>
-          <span>{serverMode ? "Wersja serwerowa" : "GitHub · projekt 03 · 02.10.2026"}</span>
+          <span>{serverMode ? "Wersja serwerowa" : "GitHub · projekt 04 · 02.10.2026"}</span>
         </footer>
       </section>
 

@@ -12,7 +12,7 @@
     "build:static": "vite build --config vite.pages.config.ts",
     "preview": "vite preview --config vite.pages.config.ts --host 127.0.0.1",
     "check": "tsc --noEmit --incremental false",
-    "test": "node --experimental-strip-types --test tests/clean-production.test.mjs tests/warehouse-model.test.mjs tests/workforce-model.test.mjs tests/server-storage.test.mjs"
+    "test": "node --experimental-strip-types --test tests/clean-production.test.mjs tests/warehouse-model.test.mjs tests/workforce-model.test.mjs tests/server-storage.test.mjs tests/local-storage.test.mjs"
   },
   "dependencies": {
     "@types/jsbarcode": "^3.11.4",

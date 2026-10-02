@@ -3,6 +3,7 @@ import "./globals.css";
 import "./responsive.css";
 import "./operations-design.css";
 import "./home-refresh.css";
+import "./portal-design.css";
 
 export const metadata: Metadata = {
   title: "Warehouse Masterpress",

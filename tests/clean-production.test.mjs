@@ -89,19 +89,16 @@ test("wersja GitHub Pages rozdziela konto lidera i magazyniera", async () => {
     '"barcodes"',
   ]) assert.match(pageSource, new RegExp(allowed));
   assert.match(pageSource, /stored\.role === "warehouse_worker" \? "shiftboard" : "dashboard"/);
-  assert.match(pageSource, /className="login-screen login-daylight"/);
-  assert.match(pageSource, /masterpress-login-logo\.png/);
+  assert.match(pageSource, /className="login-portal"/);
+  assert.match(pageSource, /masterpress-logo-white\.png/);
   assert.match(pageSource, /warehouse-login-daylight\.webp/);
-  assert.match(pageSource, /Wszystko na/);
+  assert.match(pageSource, /Dobra zmiana/);
   assert.match(pageSource, /swoim miejscu/);
-  assert.match(pageSource, /<h2>Witaj<\/h2>/);
-  assert.match(pageSource, /className="login-capability-strip"/);
+  assert.match(pageSource, /id="portal-login-title"/);
+  assert.match(pageSource, /className="portal-process"/);
   assert.match(pageSource, /<strong>Dostawy<\/strong>/);
   assert.match(pageSource, /<strong>Lokalizacje<\/strong>/);
   assert.match(pageSource, /<strong>Wysyłki<\/strong>/);
-  assert.match(pageSource, /PRZYJĘCIE/);
-  assert.match(pageSource, /SKŁADOWANIE/);
-  assert.match(pageSource, /EKSPEDYCJA/);
   assert.equal(pageSource.includes("Witaj ponownie"), false);
   assert.equal(pageSource.includes("CENTRUM OPERACJI MAGAZYNOWYCH"), false);
   assert.equal(pageSource.includes('className="login-orbit"'), false);
@@ -112,7 +109,7 @@ test("wersja GitHub Pages rozdziela konto lidera i magazyniera", async () => {
   assert.match(pageSource, /className="sidebar-account"/);
   assert.match(pageSource, /Ten moduł jest dostępny na koncie lidera/);
   const loginLogo = await stat(new URL(
-    "../public/masterpress-login-logo.png",
+    "../public/masterpress-logo-white.png",
     import.meta.url,
   ));
   assert.ok(loginLogo.size > 10_000);
